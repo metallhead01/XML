@@ -1,21 +1,58 @@
 from tkinter import *
 from tkinter import ttk
 from tkinter import messagebox
+from tkinter import filedialog
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
+import json
 from xml.dom import minidom
 
 class Visual:
     def __init__(self, root):
         self.root = root
-        root.title("XML Parser v.1.2")
+        root.title("XML Parser v.1.3.0")
         root.iconbitmap(r'images\7.ico')
-        root.geometry("800x600+580+300")
+
+        '''Зададим размер и положение экрана в зависимости от размера экрана пользователя'''
+        #root.geometry("900x700+500+600")
+        w = 800  # width for the Tk root
+        h = 600  # height for the Tk root
+
+        # get screen width and height
+        ws = root.winfo_screenwidth()  # width of the screen
+        hs = root.winfo_screenheight()  # height of the screen
+
+        # calculate x and y coordinates for the Tk root window
+        x = (ws / 2) - (w / 2)
+        y = (hs / 2) - (h / 2)
+
+        # set the dimensions of the screen
+        # and where it is placed
+        root.geometry('%dx%d+%d+%d' % (w, h, x, y))
         root.bind('<Escape>', lambda e: root.destroy())
 
         # Используем установку сессий для keep-alive подключений вместо единомоментных выззовов (Use session for keep-alive
         # connections).
         session = requests.session()
+
+        def open_file():
+            try:
+                file_path = filedialog.askopenfilename(title = "Choose your file", filetypes = [("json files","*.json")])
+                l_ist = str(ip_add.get())
+                # filename = 'presets.json'
+                with open(file_path, 'r') as f_obj:
+                    numbers = json.load(f_obj)
+            except:
+                pass
+
+        def save_file():
+            try:
+                file_path = filedialog.asksaveasfilename(title = "Choose your file", filetypes = [("json files","*.json")])
+                l_ist = str(ip_add.get())
+                with open(file_path, 'r+') as f_obj:
+                    json.dump(l_ist, f_obj)
+            except:
+                pass
 
         def request():
             # Получаем аргументы запроса
@@ -223,6 +260,18 @@ class Visual:
         port_2 = StringVar()
         port_3 = StringVar()
 
+        '''Создали строку меню'''
+
+        # Выключили старый стиль меню
+        root.option_add('*tearOff', False)
+        self.menubar = Menu(root)
+        root.configure(menu=self.menubar)
+        self.file = Menu(self.menubar)
+        self.menubar.add_cascade(menu=self.file, label='File')
+        self.file.add_command(label='Open...', command=open_file)
+        self.file.add_command(label='Save', command=save_file)
+        self.file.add_command(label='Exit', command=self.root.quit)
+
         '''Создали вкладки'''
 
         self.tab_1 = ttk.Notebook(root, height=500, width=755)
@@ -356,10 +405,7 @@ class Visual:
         self.text_field_tab_3.config(yscrollcommand=self.scrollbar_tab_3.set)
 
 
-
-
-
 root = Tk()
-my_gui = Visual(root)
+visual = Visual(root)
 
 root.mainloop()
