@@ -1,3 +1,15 @@
+'''
+Сделано:
+1. Прогресс бар отображется корректно
+
+Сделать:
+1. Шорткаты для открытия и записи в файл
+2. Разобраться с записью в файл и чтением из файла пресетов
+3. Добавить функцию поиска по выводу
+
+'''
+
+
 from tkinter import *
 from tkinter import ttk
 from tkinter import messagebox
@@ -267,10 +279,18 @@ class Visual:
         self.menubar = Menu(root)
         root.configure(menu=self.menubar)
         self.file = Menu(self.menubar)
+
+        '''Добавили надписи в меню'''
+
         self.menubar.add_cascade(menu=self.file, label='File')
         self.file.add_command(label='Open...', command=open_file)
         self.file.add_command(label='Save', command=save_file)
         self.file.add_command(label='Exit', command=self.root.quit)
+        self.file.entryconfig('Open...', accelerator="Ctrl+O")
+
+        # Shortcut для открытия файла
+
+        #root.bind('<Control-s>', save_file())
 
         '''Создали вкладки'''
 
@@ -403,6 +423,7 @@ class Visual:
 
         # Добавим обратную связь - скроллбар будет анализировать количество текста и исходя из него отображать размер
         self.text_field_tab_3.config(yscrollcommand=self.scrollbar_tab_3.set)
+
 
 
 root = Tk()
