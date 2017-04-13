@@ -18,102 +18,106 @@ class Visual:
         session = requests.session()
 
         def request():
-            try:
-                # Получаем аргументы запроса
-                # a1 = xml_arg1.get()
-                a1 = self.entry_xml_request_arg1.get()
-                a2 = xml_arg2.get()
-                a3 = xml_arg3.get()
-                a4 = xml_arg4.get()
-                a5 = xml_arg5.get()
-                i = ip_add.get()
-                p = port.get()
-                a_full = a1 + a2 + a3
+            # Получаем аргументы запроса
+            # a1 = xml_arg1.get()
+            a1 = self.entry_xml_request_arg1.get()
+            a2 = xml_arg2.get()
+            a3 = xml_arg3.get()
+            a4 = xml_arg4.get()
+            a5 = xml_arg5.get()
 
+            i = ip_add.get()
+            p = port.get()
+            ''' Проверим, ввел ли ли пользователь ip и порт, если нет - выдадим ошибку'''
+            if not i and not p:
+                messagebox.showwarning(title='Error', message="Введите IP-адрес и порт!")
+
+            else:
+                '''Собираем строку запроса'''
                 # Основное тело запроса
                 xml_request_string = '<?xml version="1.0" encoding="UTF-8"?><RK7Query> <RK7CMD CMD="' + str(
                     a1) + '" /></RK7Query>'
                 ip_string = 'https://' + i + ":" + p + '/rk7api/v0/xmlinterface.xml'
 
-                # Убираем warnings об SSL (warnings выводятся даже при отключении SSL)
-                requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+                try:
+                    # Убираем warnings об SSL (warnings выводятся даже при отключении SSL)
+                    requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
-                # Старый запрос без поддержки keep-alive
-                # response = requests.get(ip_string, data=a, auth=('admin', '1'),verify=False)
+                    # Старый запрос без поддержки keep-alive
+                    # response = requests.get(ip_string, data=a, auth=('admin', '1'),verify=False)
+                    # Запрос с выключенным SSL
+                    response = session.request(method='GET', url=ip_string, data=xml_request_string, auth=('admin', '1'),
+                                               verify=False)
 
-                # Запрос с выключенным SSL
-                response = session.request(method='GET', url=ip_string, data=xml_request_string, auth=('admin', '1'),
-                                           verify=False)
+                    xmldoc = minidom.parseString(response.text)
+                    xmldoc.normalize()
 
-                xmldoc = minidom.parseString(response.text)
-                xmldoc.normalize()
-
-                if a1 == "GetOrderList":
-                    i = 1
-                    y = 1
-                    # Обратимся к тегу Order
-                    self.text_field.delete(1.0, END)
-                    orders = xmldoc.getElementsByTagName("Order")
-                    # Обратимся к тегу Visit
-                    visits = xmldoc.getElementsByTagName("Visit")
-                    for visit in visits:
-                        self.text_field.insert(1.0, (
-                        str(i) + ". " + "Визит (ID) = " + visit.attributes.item(0).value + "\n" + "Завершен"
-                                                                                                  " = " + visit.attributes.item(
-                            2).value + "\n" "Количество гостей = " + visit.attributes.item(3).value + "\n"
-                        + "-" * 47 + "\n"))
-                        i = i + 1
-                    for order in orders:
-                        self.text_field.insert(1.0, (str(y) + ". " + "Имя заказа = " + order.attributes.item(1).value + "\n"
-                                                + "GUID = " + order.attributes.item(
-                            5).value + "\n" "Стол (ID) = " + order.attributes.item(6).value + "\n"
-                                                + "Стол (Код) = " + order.attributes.item(
-                            7).value + "\n" + "Категория Заказа (ID) = " + order.attributes.
-                                                item(
-                            8).value + "\n" + "Категория заказа (Код) = " + order.attributes.item(
-                            9).value + "\n" + "Тип Заказа (ID)"
-                                              " = " + order.attributes.item(
-                            10).value + "\n" + "Тип Заказа(Код) = " + order.attributes.item(11).value +
-                                                "\n" + "Официант (ID) = " + order.attributes.item(
-                            12).value + "\n" + "Официант (код) = " + order.attributes
-                                                .item(13).value + "\n" + "Сумма заказа = " + order.attributes.item(
-                            14).value + "\n" + "Сумма к оплате = "
-                                                + order.attributes.item(
-                            15).value + "\n" + "PriceListSum = " + order.attributes.item(16).value + "\n" +
-                                                "Всего блюд = " + order.attributes.item(
-                            17).value + "\n" + "Завершен = " + order.attributes.item(18).value
-                                                + "\n" + "Счет = " + order.attributes.item(
-                            19).value + "\n" + "Открыт = " + order.attributes.item(20).value
-                                                + "\n" + "-" * 47 + "\n"))
-                        y = y + 1
+                    if a1 == "GetOrderList":
+                        i = 1
+                        y = 1
+                        # Обратимся к тегу Order
+                        self.text_field.delete(1.0, END)
+                        orders = xmldoc.getElementsByTagName("Order")
+                        # Обратимся к тегу Visit
+                        visits = xmldoc.getElementsByTagName("Visit")
+                        for visit in visits:
+                            self.text_field.insert(1.0, (
+                            str(i) + ". " + "Визит (ID) = " + visit.attributes.item(0).value + "\n" + "Завершен"
+                                                                                                      " = " + visit.attributes.item(
+                                2).value + "\n" "Количество гостей = " + visit.attributes.item(3).value + "\n"
+                            + "-" * 47 + "\n"))
+                            i = i + 1
+                        for order in orders:
+                            self.text_field.insert(1.0, (str(y) + ". " + "Имя заказа = " + order.attributes.item(1).value + "\n"
+                                                    + "GUID = " + order.attributes.item(
+                                5).value + "\n" "Стол (ID) = " + order.attributes.item(6).value + "\n"
+                                                    + "Стол (Код) = " + order.attributes.item(
+                                7).value + "\n" + "Категория Заказа (ID) = " + order.attributes.
+                                                    item(
+                                8).value + "\n" + "Категория заказа (Код) = " + order.attributes.item(
+                                9).value + "\n" + "Тип Заказа (ID)"
+                                                  " = " + order.attributes.item(
+                                10).value + "\n" + "Тип Заказа(Код) = " + order.attributes.item(11).value +
+                                                    "\n" + "Официант (ID) = " + order.attributes.item(
+                                12).value + "\n" + "Официант (код) = " + order.attributes
+                                                    .item(13).value + "\n" + "Сумма заказа = " + order.attributes.item(
+                                14).value + "\n" + "Сумма к оплате = "
+                                                    + order.attributes.item(
+                                15).value + "\n" + "PriceListSum = " + order.attributes.item(16).value + "\n" +
+                                                    "Всего блюд = " + order.attributes.item(
+                                17).value + "\n" + "Завершен = " + order.attributes.item(18).value
+                                                    + "\n" + "Счет = " + order.attributes.item(
+                                19).value + "\n" + "Открыт = " + order.attributes.item(20).value
+                                                    + "\n" + "-" * 47 + "\n"))
+                            y = y + 1
 
 
-                elif a1 == "GetWaiterList":
-                    self.text_field.delete(1.0, END)
-                    waiters = xmldoc.getElementsByTagName("waiter")
-                    for waiter in waiters:
-                        self.text_field.insert(1.0, (
-                        "Официант (ID) = " + waiter.attributes.item(0).value + "\n" + "Официант (Код)= " +
-                        waiter.attributes.item(1).value + "\n" + "-" * 47 + "\n"))
+                    elif a1 == "GetWaiterList":
+                        self.text_field.delete(1.0, END)
+                        waiters = xmldoc.getElementsByTagName("waiter")
+                        for waiter in waiters:
+                            self.text_field.insert(1.0, (
+                            "Официант (ID) = " + waiter.attributes.item(0).value + "\n" + "Официант (Код)= " +
+                            waiter.attributes.item(1).value + "\n" + "-" * 47 + "\n"))
 
-                elif a1 == "GetRefList":
-                    self.text_field.delete(1.0, END)
-                    references = xmldoc.getElementsByTagName("RK7Reference")
-                    for reference in references:
-                        self.text_field.insert(1.0, (
-                        "RefName = " + reference.attributes.item(0).value + " " + "Count = " + reference.
-                        attributes.item(1).value + " " + "DataVersion = " + reference.attributes.item(
-                            2).value + "\n" + "-" * 60 + "\n"))
+                    elif a1 == "GetRefList":
+                        self.text_field.delete(1.0, END)
+                        references = xmldoc.getElementsByTagName("RK7Reference")
+                        for reference in references:
+                            self.text_field.insert(1.0, (
+                            "RefName = " + reference.attributes.item(0).value + " " + "Count = " + reference.
+                            attributes.item(1).value + " " + "DataVersion = " + reference.attributes.item(
+                                2).value + "\n" + "-" * 60 + "\n"))
 
-                else:
-                    self.text_field.delete(1.0, END)
-                    self.text_field.insert(1.0, response.content)
+                    else:
+                        self.text_field.delete(1.0, END)
+                        self.text_field.insert(1.0, response.content)
 
-            except OSError as e:
-                print(e)
-                messagebox.showerror(title='Connection error', message=e)
+                except OSError as e:
+                    print(e)
+                    messagebox.showerror(title='Connection error', message=e)
 
-                # return(soup)
+                    # return(soup)
 
         def create():
             xml_request_string = '<?xml version="1.0" encoding="UTF-8"?><RK7Query><RK7CMD CMD="CreateOrder"><Order><OrderType' \
@@ -123,38 +127,42 @@ class Visual:
             # i_2 = '172.22.3.86'
             p_2 = port_2.get()
             # p_2='4545'
+            ''' Проверим, ввел ли ли пользователь ip и порт, если нет - выдадим ошибку'''
+            if not i_2 and not p_2:
+                messagebox.showwarning(title='Error', message="Введите IP-адрес и порт!")
 
-            ip_string_2 = 'https://' + i_2 + ":" + p_2 + '/rk7api/v0/xmlinterface.xml'
-            try:
-                requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
-                response_create_order = session.request(method='POST', url=ip_string_2, data=xml_request_string,
-                                                        auth=('admin', '1'), verify=False)
-                # response_2 = requests.post(ip_string_2, data=xml_request_string, auth=('admin', '1'),verify=False)
-                # print(response_create_order.content)
-                xmldoc = minidom.parseString(response_create_order.text)
-                xmldoc.normalize()
-                visitid = xmldoc.getElementsByTagName("RK7QueryResult")
-                for visit in visitid:
-                    visit = visit.attributes.item(5).value
-                    xml_save_order = '<RK7Query><RK7CMD CMD="SaveOrder" deferred="1" dontcheckLicense="1"><Order visit="' + \
-                                     str(visit) + '" orderIdent="256" /><Session><Station code="' + \
-                                     str(self.entry_xml_create_tab_2_arg3.get()) + '" /><Dish code="' + \
-                                     str(self.entry_xml_create_tab_2_arg4.get()) + '" quantity="' + \
-                                     str(self.entry_xml_create_tab_2_arg4.get()) + '"></Dish></Session></RK7CMD></RK7Query>'
+            else:
+                ip_string_2 = 'https://' + i_2 + ":" + p_2 + '/rk7api/v0/xmlinterface.xml'
+                try:
+                    requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+                    response_create_order = session.request(method='POST', url=ip_string_2, data=xml_request_string,
+                                                            auth=('admin', '1'), verify=False)
+                    # response_2 = requests.post(ip_string_2, data=xml_request_string, auth=('admin', '1'),verify=False)
+                    # print(response_create_order.content)
+                    xmldoc = minidom.parseString(response_create_order.text)
+                    xmldoc.normalize()
+                    visitid = xmldoc.getElementsByTagName("RK7QueryResult")
+                    for visit in visitid:
+                        visit = visit.attributes.item(5).value
+                        xml_save_order = '<RK7Query><RK7CMD CMD="SaveOrder" deferred="1" dontcheckLicense="1"><Order visit="' + \
+                                         str(visit) + '" orderIdent="256" /><Session><Station code="' + \
+                                         str(self.entry_xml_create_tab_2_arg3.get()) + '" /><Dish code="' + \
+                                         str(self.entry_xml_create_tab_2_arg4.get()) + '" quantity="' + \
+                                         str(self.entry_xml_create_tab_2_arg4.get()) + '"></Dish></Session></RK7CMD></RK7Query>'
 
-                    xml_save_order_string = xml_save_order.encode('utf-8')
-                    response_save_order = session.request(method='POST', url=ip_string_2, data=xml_save_order_string,
-                                                          auth=('admin', '1'), verify=False)
-                    # Перекодируем response_save_order в нужную нам кодировку (кириллица поломана)
-                    response_save_order.encoding = 'UTF-8'
-                    # Уже перекодированные данные выводим с помощью метода .text
-                    self.text_field_tab_2.insert(1.0, ('# ' + response_save_order.text + "\n" + "=" * 70 + "\n"))
+                        xml_save_order_string = xml_save_order.encode('utf-8')
+                        response_save_order = session.request(method='POST', url=ip_string_2, data=xml_save_order_string,
+                                                              auth=('admin', '1'), verify=False)
+                        # Перекодируем response_save_order в нужную нам кодировку (кириллица поломана)
+                        response_save_order.encoding = 'UTF-8'
+                        # Уже перекодированные данные выводим с помощью метода .text
+                        self.text_field_tab_2.insert(1.0, ('# ' + response_save_order.text + "\n" + "=" * 70 + "\n"))
 
 
 
-            except OSError as e:
-                # print(e)
-                messagebox.showerror(title='Connection error', message=e)
+                except OSError as e:
+                    # print(e)
+                    messagebox.showerror(title='Connection error', message=e)
 
         def pay():
             xml_pay_string = '<RK7Query><RK7CMD CMD="PayOrder"><Order guid="' + str(self.entry_xml_create_tab_3_arg1.get()) + \
@@ -167,22 +175,26 @@ class Visual:
             # i_2 = '172.22.3.86'
             p_3 = port_3.get()
             # p_2='4545'
+            ''' Проверим, ввел ли ли пользователь ip и порт, если нет - выдадим ошибку'''
+            if not i_3 and not p_3:
+                messagebox.showwarning(title='Error', message="Введите IP-адрес и порт!")
 
-            ip_string_3 = 'https://' + i_3 + ":" + p_3 + '/rk7api/v0/xmlinterface.xml'
-            try:
-                requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
-                response_pay_order = session.request(method='POST', url=ip_string_3, data=xml_pay_string,
-                                                     auth=('admin', '1')
-                                                     , verify=False)
-                xmldoc = minidom.parseString(response_pay_order.text)
-                xmldoc.normalize()
-                response_pay_order.encoding = 'UTF-8'
-                self.text_field_tab_3.insert(1.0, ('# ' + response_pay_order.text + "\n" + "-" * 70 + "\n"))
+            else:
+                ip_string_3 = 'https://' + i_3 + ":" + p_3 + '/rk7api/v0/xmlinterface.xml'
+                try:
+                    requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+                    response_pay_order = session.request(method='POST', url=ip_string_3, data=xml_pay_string,
+                                                         auth=('admin', '1')
+                                                         , verify=False)
+                    xmldoc = minidom.parseString(response_pay_order.text)
+                    xmldoc.normalize()
+                    response_pay_order.encoding = 'UTF-8'
+                    self.text_field_tab_3.insert(1.0, ('# ' + response_pay_order.text + "\n" + "-" * 70 + "\n"))
 
 
-            except OSError as e:
-                # print(e)
-                messagebox.showerror(title='Connection error', message=e)
+                except OSError as e:
+                    # print(e)
+                    messagebox.showerror(title='Connection error', message=e)
 
 
         '''Объявили переменные для полей'''
