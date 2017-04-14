@@ -1,11 +1,12 @@
 '''
 Сделано:
 1. Прогресс бар отображется корректно
+2. Разобраться с записью в файл и чтением из файла пресетов
 
 Сделать:
 1. Шорткаты для открытия и записи в файл
-2. Разобраться с записью в файл и чтением из файла пресетов
-3. Добавить функцию поиска по выводу
+2. Добавить функцию поиска по выводу
+3. Поправить вывод OrderID и основного ответа заказа
 
 '''
 
@@ -43,32 +44,34 @@ class Visual:
         root.geometry('%dx%d+%d+%d' % (w, h, x, y))
         root.bind('<Escape>', lambda e: root.destroy())
 
-        # Используем установку сессий для keep-alive подключений вместо единомоментных выззовов (Use session for keep-alive
-        # connections).
+        # Используем установку сессий для keep-alive подключений вместо единомоментных выззовов (Use session for keep-
+        # alive connections).
         session = requests.session()
 
         def open_file():
             try:
-                file_path = filedialog.askopenfilename(title = "Choose your file", filetypes = [("json files","*.json")])
-                l_ist = str(ip_add.get())
+                file_path = filedialog.askopenfilename(title="Choose your file", filetypes=[("json files","*.json")])
                 # filename = 'presets.json'
                 with open(file_path, 'r') as f_obj:
-                    numbers = json.load(f_obj)
+                    file_import = json.load(f_obj)
+                '''Зададим ip и порт из полученных из файла значений'''
+                ip_add.set(file_import[0])
+                port.set(file_import[1])
             except:
                 pass
 
         def save_file():
             try:
-                file_path = filedialog.asksaveasfilename(title = "Choose your file", filetypes = [("json files","*.json")])
-                l_ist = str(ip_add.get())
-                with open(file_path, 'r+') as f_obj:
-                    json.dump(l_ist, f_obj)
+                file_path = filedialog.asksaveasfilename(title="Choose your file", filetypes=[("json files","*.json")])
+                '''Собирем файл для экспорта из полей ip и порт'''
+                file_export = [str(ip_add.get()), str(port.get())]
+                with open(file_path, 'w') as f_obj:
+                    json.dump(file_export, f_obj)
             except:
                 pass
 
         def request():
             # Получаем аргументы запроса
-            # a1 = xml_arg1.get()
             a1 = self.entry_xml_request_arg1.get()
             a2 = xml_arg2.get()
             a3 = xml_arg3.get()
@@ -116,6 +119,7 @@ class Visual:
                                 2).value + "\n" "Количество гостей = " + visit.attributes.item(3).value + "\n"
                             + "-" * 47 + "\n"))
                             i = i + 1
+
                         for order in orders:
                             self.text_field.insert(1.0, (str(y) + ". " + "Имя заказа = " + order.attributes.item(1).value + "\n"
                                                     + "GUID = " + order.attributes.item(
@@ -172,9 +176,9 @@ class Visual:
             xml_request_string = '<?xml version="1.0" encoding="UTF-8"?><RK7Query><RK7CMD CMD="CreateOrder"><Order><OrderType' \
                                  ' code= "' + str(self.entry_xml_create_tab_2_arg1.get()) + '" /><Table code= "' + \
                                  str(self.entry_xml_create_tab_2_arg2.get()) + '" /></Order></RK7CMD></RK7Query>'
-            i_2 = ip_add_2.get()
+            i_2 = ip_add.get()
             # i_2 = '172.22.3.86'
-            p_2 = port_2.get()
+            p_2 = port.get()
             # p_2='4545'
             ''' Проверим, ввел ли ли пользователь ip и порт, если нет - выдадим ошибку'''
             if not i_2 and not p_2:
@@ -220,9 +224,9 @@ class Visual:
                              str(self.entry_xml_create_tab_3_arg4.get()) + '" amount="' + str(
                 self.entry_xml_create_tab_3_arg5.get()) \
                              + '"/></RK7CMD></RK7Query>'
-            i_3 = ip_add_3.get()
+            i_3 = ip_add.get()
             # i_2 = '172.22.3.86'
-            p_3 = port_3.get()
+            p_3 = port.get()
             # p_2='4545'
             ''' Проверим, ввел ли ли пользователь ip и порт, если нет - выдадим ошибку'''
             if not i_3 and not p_3:
@@ -368,8 +372,8 @@ class Visual:
         self.ip_label_tab_2 = Label(self.frame_2, text='IP-Address').place(x=25, y=8)
         self.port_label_tab_2 = Label(self.frame_2, text='Port').place(x=115, y=8)
 
-        self.ip_address_entry_tab_2 = ttk.Entry(self.frame_2, width=20, textvariable=ip_add_2).place(x=15, y=30, width=90)
-        self.port_entry_tab_2 = ttk.Entry(self.frame_2, width=20, textvariable=port_2).place(x=110, y=30, width=40)
+        self.ip_address_entry_tab_2 = ttk.Entry(self.frame_2, width=20, textvariable=ip_add).place(x=15, y=30, width=90)
+        self.port_entry_tab_2 = ttk.Entry(self.frame_2, width=20, textvariable=port).place(x=110, y=30, width=40)
 
         # Поле текста 2
         self.text_field_tab_2 = Text(self.frame_2, height=25, width=70, wrap=WORD, relief=SOLID)
@@ -406,8 +410,8 @@ class Visual:
         self.entry_xml_create_tab_3_arg5.place(x=15, y=259)
         self.label_xml_create_tab_3_arg5 = Label(self.frame_3, text='Сумма').place(x=15, y=237)
 
-        self.ip_address_entry_tab_3 = ttk.Entry(self.frame_3, width=20, textvariable=ip_add_3).place(x=15, y=30, width=90)
-        self.port_entry_tab_3 = ttk.Entry(self.frame_3, width=20, textvariable=port_3).place(x=110, y=30, width=40)
+        self.ip_address_entry_tab_3 = ttk.Entry(self.frame_3, width=20, textvariable=ip_add).place(x=15, y=30, width=90)
+        self.port_entry_tab_3 = ttk.Entry(self.frame_3, width=20, textvariable=port).place(x=110, y=30, width=40)
 
         # Поле текста 3
         self.text_field_tab_3 = Text(self.frame_3, height=25, width=70, wrap=WORD, relief=SOLID)
