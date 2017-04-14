@@ -121,8 +121,8 @@ class Visual:
                             i = i + 1
 
                         for order in orders:
-                            self.text_field.insert(1.0, (str(y) + ". " + "Имя заказа = " + order.attributes.item(1).value + "\n"
-                                                    + "GUID = " + order.attributes.item(
+                            self.text_field.insert(1.0, (str(y) + ". " + "Имя заказа = " +
+                                order.attributes.item(1).value + "\n" + "GUID = " + order.attributes.item(
                                 5).value + "\n" "Стол (ID) = " + order.attributes.item(6).value + "\n"
                                                     + "Стол (Код) = " + order.attributes.item(
                                 7).value + "\n" + "Категория Заказа (ID) = " + order.attributes.
@@ -143,7 +143,6 @@ class Visual:
                                 19).value + "\n" + "Открыт = " + order.attributes.item(20).value
                                                     + "\n" + "-" * 47 + "\n"))
                             y = y + 1
-
 
                     elif a1 == "GetWaiterList":
                         self.text_field.delete(1.0, END)
@@ -173,9 +172,10 @@ class Visual:
                     # return(soup)
 
         def create():
-            xml_request_string = '<?xml version="1.0" encoding="UTF-8"?><RK7Query><RK7CMD CMD="CreateOrder"><Order><OrderType' \
-                                 ' code= "' + str(self.entry_xml_create_tab_2_arg1.get()) + '" /><Table code= "' + \
-                                 str(self.entry_xml_create_tab_2_arg2.get()) + '" /></Order></RK7CMD></RK7Query>'
+            xml_request_string = '<?xml version="1.0" encoding="UTF-8"?><RK7Query><RK7CMD CMD="CreateOrder"><Order>' \
+                                 '<OrderType code= "' + str(self.entry_xml_create_tab_2_arg1.get()) + '" />' \
+                                '<Table code= "' + str(self.entry_xml_create_tab_2_arg2.get()) + '" /></Order>' \
+                                '</RK7CMD></RK7Query>'
             i_2 = ip_add.get()
             # i_2 = '172.22.3.86'
             p_2 = port.get()
@@ -211,18 +211,17 @@ class Visual:
                         # Уже перекодированные данные выводим с помощью метода .text
                         self.text_field_tab_2.insert(1.0, ('# ' + response_save_order.text + "\n" + "=" * 70 + "\n"))
 
-
-
                 except OSError as e:
                     # print(e)
                     messagebox.showerror(title='Connection error', message=e)
 
         def pay():
-            xml_pay_string = '<RK7Query><RK7CMD CMD="PayOrder"><Order guid="' + str(self.entry_xml_create_tab_3_arg1.get()) + \
-                             '"/><Cashier code="' + str(self.entry_xml_create_tab_3_arg2.get()) + '"/><Station code="' + \
+            xml_pay_string = '<RK7Query><RK7CMD CMD="PayOrder"><Order guid="' + \
+                             str(self.entry_xml_create_tab_3_arg1.get()) + '"/><Cashier code="' + \
+                             str(self.entry_xml_create_tab_3_arg2.get()) + '"/><Station code="' + \
                              str(self.entry_xml_create_tab_3_arg3.get()) + '"/><Payment id="' + \
-                             str(self.entry_xml_create_tab_3_arg4.get()) + '" amount="' + str(
-                self.entry_xml_create_tab_3_arg5.get()) \
+                             str(self.entry_xml_create_tab_3_arg4.get()) + '" amount="' + \
+                             str(self.entry_xml_create_tab_3_arg5.get()) \
                              + '"/></RK7CMD></RK7Query>'
             i_3 = ip_add.get()
             # i_2 = '172.22.3.86'
@@ -237,18 +236,15 @@ class Visual:
                 try:
                     requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
                     response_pay_order = session.request(method='POST', url=ip_string_3, data=xml_pay_string,
-                                                         auth=('admin', '1')
-                                                         , verify=False)
+                    auth=('admin', '1'), verify=False)
                     xmldoc = minidom.parseString(response_pay_order.text)
                     xmldoc.normalize()
                     response_pay_order.encoding = 'UTF-8'
                     self.text_field_tab_3.insert(1.0, ('# ' + response_pay_order.text + "\n" + "-" * 70 + "\n"))
 
-
                 except OSError as e:
                     # print(e)
                     messagebox.showerror(title='Connection error', message=e)
-
 
         '''Объявили переменные для полей'''
 
@@ -269,12 +265,7 @@ class Visual:
         xml_arg5_tab_3 = StringVar()
 
         ip_add = StringVar()
-        ip_add_2 = StringVar()
-        ip_add_3 = StringVar()
-
         port = StringVar()
-        port_2 = StringVar()
-        port_3 = StringVar()
 
         '''Создали строку меню'''
 
@@ -293,8 +284,7 @@ class Visual:
         self.file.entryconfig('Open...', accelerator="Ctrl+O")
 
         # Shortcut для открытия файла
-
-        #root.bind('<Control-s>', save_file())
+        #root.bind('<Control-o>', open_file())
 
         '''Создали вкладки'''
 
@@ -313,14 +303,10 @@ class Visual:
         self.tab_1.add(self.frame_2, text="Создание заказа")
         self.tab_1.add(self.frame_3, text="Оплата заказа")
 
-
-
         '''Первая вкладка'''
 
-
-
-        self.entry_xml_request_arg1 = ttk.Combobox(self.frame_1, values=['GetOrderList', 'GetWaiterList', 'GetRefList']
-                                                   , width=17, state='readonly')
+        self.entry_xml_request_arg1 = ttk.Combobox(self.frame_1, values=['GetOrderList', 'GetWaiterList', 'GetRefList'],
+                                                                                            width=17, state='readonly')
         self.entry_xml_request_arg1.place(x=15, y=70)
         self.entry_xml_request_arg2 = ttk.Entry(self.frame_1, width=20, textvariable=xml_arg2).place(x=15, y=110)
         self.entry_xml_request_arg3 = ttk.Entry(self.frame_1, width=20, textvariable=xml_arg3).place(x=15, y=150)
@@ -343,10 +329,7 @@ class Visual:
 
         self.text_field.config(yscrollcommand=self.scrollbar.set)
 
-
-
         '''Вторая вкладка'''
-
 
         # Тип заказа
         self.entry_xml_create_tab_2_arg1 = ttk.Entry(self.frame_2, width=20, textvariable=xml_arg1_tab_2)
@@ -427,8 +410,6 @@ class Visual:
 
         # Добавим обратную связь - скроллбар будет анализировать количество текста и исходя из него отображать размер
         self.text_field_tab_3.config(yscrollcommand=self.scrollbar_tab_3.set)
-
-
 
 root = Tk()
 visual = Visual(root)
