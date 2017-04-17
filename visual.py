@@ -29,9 +29,9 @@ class Visual:
 
         # Настроим лог
         with open('log.txt', 'a') as log:
-            log.write(strftime(str("%H:%M:%S %Y-%m-%d") + ' Application started.' + '\n'))
+            log.write('\n' + strftime(str("%H:%M:%S %Y-%m-%d") + ' Application started.' + '\n'))
 
-        root.title("XML Parser v.1.3.4")
+        root.title("XML Parser v.1.3.5")
 
         '''Добавляем функцию для сборки. В ней две ветки - try: функция проверяет используется ли frozen-режим (режимо
         одного .exe или обычное выполнение скрипта. Если интерпритатор видит, что метод "_MEIPASS" отсутствует (а он 
@@ -126,7 +126,7 @@ class Visual:
                     response = session.request(method='GET', url=ip_string, data=xml_request_string, auth=(id.get(),
                                                 password.get()), verify=False)
 
-                    with open('log.txt', 'a') as log:
+                    with open('log.txt', 'a', encoding='UTF-8') as log:
                         log.write(strftime(str("%H:%M:%S %Y-%m-%d") + ' GetOrderList query result' + ' ' + response.text
                                   + '\n'))
 
@@ -196,8 +196,10 @@ class Visual:
                         self.text_field.insert(1.0, response.content)
 
                 except OSError as e:
-                    print(e)
+                    # print(e)
                     messagebox.showerror(title='Connection error', message=e)
+                    with open('log.txt', 'a', encoding='UTF-8') as log:
+                        log.write(strftime(str("%H:%M:%S %Y-%m-%d") + str(e) + '\n'))
 
                     # return(soup)
 
@@ -220,15 +222,14 @@ class Visual:
                     response_create_order = session.request(method='POST', url=ip_string_2, data=xml_request_string,
                                                             auth=(id.get(), password.get()), verify=False)
                     # response_2 = requests.post(ip_string_2, data=xml_request_string, auth=('admin', '1'),verify=False)
-                    # print(response_create_order.content)
+                    print(response_create_order.content)
                     xmldoc = minidom.parseString(response_create_order.text)
                     xmldoc.normalize()
                     '''Вывод результатов запроса'''
                     #print(response_create_order.text)
                     visitid = xmldoc.getElementsByTagName("RK7QueryResult")
                     for visit in visitid:
-                        visit = visit.attributes.item(4).value
-                        print(visit)
+                        visit = visit.attributes.item(5).value
                         xml_save_order = '<RK7Query><RK7CMD CMD="SaveOrder" deferred="1" dontcheckLicense="1">' \
                                          '<Order visit="' + \
                                          str(visit) + '" orderIdent="256" /><Session><Station code="' + \
@@ -237,7 +238,6 @@ class Visual:
                                          str(self.entry_xml_create_tab_2_arg4.get()) + '"></Dish></Session></RK7CMD>' \
                                                                                        '</RK7Query>'
 
-                        print(xml_save_order)
                         xml_save_order_string = xml_save_order.encode('utf-8')
                         response_save_order = session.request(method='POST', url=ip_string_2, data=xml_save_order_string,
                                                               auth=('admin', '1'), verify=False)
@@ -245,10 +245,14 @@ class Visual:
                         response_save_order.encoding = 'UTF-8'
                         # Уже перекодированные данные выводим с помощью метода .text
                         self.text_field_tab_2.insert(1.0, ('# ' + response_save_order.text + "\n" + "=" * 70 + "\n"))
+                        with open('log.txt', 'a', encoding='UTF-8') as log:
+                            log.write(strftime(str("%H:%M:%S %Y-%m-%d") + ' SaveOrder request result' +
+                                               response_save_order.text + '\n'))
 
                 except OSError as e:
-                    # print(e)
                     messagebox.showerror(title='Connection error', message=e)
+                    with open('log.txt', 'a', encoding='UTF-8') as log:
+                        log.write(str(' ' + strftime("%H:%M:%S %Y-%m-%d")) + str(e) + '\n')
 
         def pay():
             xml_pay_string = '<RK7Query><RK7CMD CMD="PayOrder"><Order guid="' + \
@@ -275,10 +279,16 @@ class Visual:
                     xmldoc.normalize()
                     response_pay_order.encoding = 'UTF-8'
                     self.text_field_tab_3.insert(1.0, ('# ' + response_pay_order.text + "\n" + "-" * 70 + "\n"))
+                    with open('log.txt', 'a') as log:
+                        log.write(strftime(str("%H:%M:%S %Y-%m-%d") + ' SaveOrder request result' +
+                                           response_pay_order.text + '\n'))
+
 
                 except OSError as e:
                     # print(e)
                     messagebox.showerror(title='Connection error', message=e)
+                    with open('log.txt', 'a', encoding='UTF-8') as log:
+                        log.write(strftime(str("%H:%M:%S %Y-%m-%d") + str(e) + '\n'))
 
         '''Объявили переменные для полей'''
 
@@ -429,23 +439,23 @@ class Visual:
 
         # GUID заказа
         self.label_xml_create_tab_3_arg1 = Label(self.frame_3, text='GUID заказа').place(x=15, y=68)
-        self.entry_xml_create_tab_3_arg1 = ttk.Entry(self.frame_3, width=20, textvariable=xml_arg1_tab_2)
+        self.entry_xml_create_tab_3_arg1 = ttk.Entry(self.frame_3, width=20, textvariable=xml_arg1_tab_3)
         self.entry_xml_create_tab_3_arg1.place(x=15, y=90)
         # Код кассира
         self.label_xml_create_tab_3_arg2 = Label(self.frame_3, text='Код кассира').place(x=15, y=111)
-        self.entry_xml_create_tab_3_arg2 = ttk.Entry(self.frame_3, width=20, textvariable=xml_arg2_tab_2)
+        self.entry_xml_create_tab_3_arg2 = ttk.Entry(self.frame_3, width=20, textvariable=xml_arg2_tab_3)
         self.entry_xml_create_tab_3_arg2.place(x=15, y=132)
         # Код станции
         self.label_xml_create_tab_3_arg3 = Label(self.frame_3, text='Код станции').place(x=15, y=153)
-        self.entry_xml_create_tab_3_arg3 = ttk.Entry(self.frame_3, width=20, textvariable=xml_arg3_tab_2)
+        self.entry_xml_create_tab_3_arg3 = ttk.Entry(self.frame_3, width=20, textvariable=xml_arg3_tab_3)
         self.entry_xml_create_tab_3_arg3.place(x=15, y=174)
         # ID валюты
         self.label_xml_create_tab_3_arg4 = Label(self.frame_3, text='ID валюты').place(x=15, y=195)
-        self.entry_xml_create_tab_3_arg4 = ttk.Entry(self.frame_3, width=20, textvariable=xml_arg4_tab_2)
+        self.entry_xml_create_tab_3_arg4 = ttk.Entry(self.frame_3, width=20, textvariable=xml_arg4_tab_3)
         self.entry_xml_create_tab_3_arg4.place(x=15, y=216)
         # Сумма
         self.label_xml_create_tab_3_arg5 = Label(self.frame_3, text='Сумма').place(x=15, y=237)
-        self.entry_xml_create_tab_3_arg5 = ttk.Entry(self.frame_3, width=20, textvariable=xml_arg5_tab_2)
+        self.entry_xml_create_tab_3_arg5 = ttk.Entry(self.frame_3, width=20, textvariable=xml_arg5_tab_3)
         self.entry_xml_create_tab_3_arg5.place(x=15, y=259)
 
         self.ip_address_entry_tab_3 = ttk.Entry(self.frame_3, width=20, textvariable=ip_add).place(x=15, y=30, width=90)
