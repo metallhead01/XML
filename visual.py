@@ -26,8 +26,10 @@ from time import gmtime, strftime
 class Visual:
     def __init__(self, root):
         self.root = root
-        print(strftime("%H:%M:%S %Y-%m-%d", gmtime()))
 
+        # Настроим лог
+        with open('log.txt', 'a') as log:
+            log.write(strftime(str("%H:%M:%S %Y-%m-%d") + ' Application started.' + '\n'))
 
         root.title("XML Parser v.1.3.4")
 
@@ -123,7 +125,12 @@ class Visual:
                     # Запрос с выключенным SSL
                     response = session.request(method='GET', url=ip_string, data=xml_request_string, auth=(id.get(),
                                                 password.get()), verify=False)
-                    print(response.text)
+
+                    with open('log.txt', 'a') as log:
+                        log.write(strftime(str("%H:%M:%S %Y-%m-%d") + ' GetOrderList query result' + ' ' + response.text
+                                  + '\n'))
+
+                    # print(response.text)
                     xmldoc = minidom.parseString(response.text)
                     xmldoc.normalize()
 
