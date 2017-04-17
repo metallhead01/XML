@@ -20,11 +20,16 @@ import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 import json
 from xml.dom import minidom
+from time import gmtime, strftime
+
 
 class Visual:
     def __init__(self, root):
         self.root = root
-        root.title("XML Parser v.1.3.3")
+        print(strftime("%H:%M:%S %Y-%m-%d", gmtime()))
+
+
+        root.title("XML Parser v.1.3.4")
 
         '''Добавляем функцию для сборки. В ней две ветки - try: функция проверяет используется ли frozen-режим (режимо
         одного .exe или обычное выполнение скрипта. Если интерпритатор видит, что метод "_MEIPASS" отсутствует (а он 
@@ -139,26 +144,26 @@ class Visual:
 
                         for order in orders:
                             self.text_field.insert(1.0, (str(y) + ". " + "ID заказа = " +
-                                order.attributes.item(1).value + "\n" + "Имя заказа = " +
-                                order.attributes.item(2).value + "\n" + "GUID = " + order.attributes.item(
-                                6).value + "\n" "Стол (ID) = " + order.attributes.item(7).value + "\n"
+                                order.attributes.item(0).value + "\n" + "Имя заказа = " +
+                                order.attributes.item(1).value + "\n" + "GUID = " + order.attributes.item(
+                                5).value + "\n" "Стол (ID) = " + order.attributes.item(6).value + "\n"
                                                     + "Стол (Код) = " + order.attributes.item(
-                                8).value + "\n" + "Категория Заказа (ID) = " + order.attributes.
+                                7).value + "\n" + "Категория Заказа (ID) = " + order.attributes.
                                                     item(
-                                9).value + "\n" + "Категория заказа (Код) = " + order.attributes.item(
-                                10).value + "\n" + "Тип Заказа (ID)"
+                                8).value + "\n" + "Категория заказа (Код) = " + order.attributes.item(
+                                9).value + "\n" + "Тип Заказа (ID)"
                                                   " = " + order.attributes.item(
-                                11).value + "\n" + "Тип Заказа(Код) = " + order.attributes.item(12).value +
+                                10).value + "\n" + "Тип Заказа(Код) = " + order.attributes.item(11).value +
                                                     "\n" + "Официант (ID) = " + order.attributes.item(
-                                13).value + "\n" + "Официант (код) = " + order.attributes
-                                                    .item(14).value + "\n" + "Сумма заказа = " + order.attributes.item(
-                                15).value + "\n" + "Сумма к оплате = "
+                                12).value + "\n" + "Официант (код) = " + order.attributes
+                                                    .item(13).value + "\n" + "Сумма заказа = " + order.attributes.item(
+                                14).value + "\n" + "Сумма к оплате = "
                                                     + order.attributes.item(
-                                16).value + "\n" + "PriceListSum = " + order.attributes.item(17).value + "\n" +
+                                15).value + "\n" + "PriceListSum = " + order.attributes.item(16).value + "\n" +
                                                     "Всего блюд = " + order.attributes.item(
-                                18).value + "\n" + "Завершен = " + order.attributes.item(19).value
+                                17).value + "\n" + "Завершен = " + order.attributes.item(18).value
                                                     + "\n" + "Счет = " + order.attributes.item(
-                                20).value + "\n" + "Открыт = " + order.attributes.item(21).value
+                                19).value + "\n" + "Открыт = " + order.attributes.item(20).value
                                                     + "\n" + "-" * 47 + "\n"))
                             y = y + 1
 
