@@ -2,6 +2,7 @@
 Сделано:
 1. Прогресс бар отображется корректно
 2. Разобраться с записью в файл и чтением из файла пресетов
+3. Собран один .exe-mode
 
 Сделать:
 1. Шорткаты для открытия и записи в файл
@@ -40,9 +41,6 @@ class Visual:
         '''Задаем переменную для обработки пути с картинкой'''
         icon = resource_path(r'C:\GitHub\XML\images\7.ico')
         root.iconbitmap(icon)
-        #icon = resource_path("7.ico")
-        #print(icon)
-        #root.iconbitmap(r'images\7.ico')
 
         '''Зададим размер и положение экрана в зависимости от размера экрана пользователя'''
         #root.geometry("900x700+500+600")
@@ -75,6 +73,8 @@ class Visual:
                 '''Зададим ip и порт из полученных из файла значений'''
                 ip_add.set(file_import[0])
                 port.set(file_import[1])
+                id.set(file_import[2])
+                password.set(file_import[3])
             except:
                 pass
 
@@ -82,7 +82,7 @@ class Visual:
             try:
                 file_path = filedialog.asksaveasfilename(title="Choose your file", filetypes=[("json files","*.json")])
                 '''Собирем файл для экспорта из полей ip и порт'''
-                file_export = [str(ip_add.get()), str(port.get())]
+                file_export = [str(ip_add.get()), str(port.get()), str(id.get()), str(password.get())]
                 with open(file_path, 'w') as f_obj:
                     json.dump(file_export, f_obj)
             except:
@@ -116,9 +116,9 @@ class Visual:
                     # Старый запрос без поддержки keep-alive
                     # response = requests.get(ip_string, data=a, auth=('admin', '1'),verify=False)
                     # Запрос с выключенным SSL
-                    response = session.request(method='GET', url=ip_string, data=xml_request_string, auth=('admin', '1'),
-                                               verify=False)
-
+                    response = session.request(method='GET', url=ip_string, data=xml_request_string, auth=(id.get(),
+                                                password.get()), verify=False)
+                    print(response.text)
                     xmldoc = minidom.parseString(response.text)
                     xmldoc.normalize()
 
@@ -133,32 +133,32 @@ class Visual:
                         for visit in visits:
                             self.text_field.insert(1.0, (
                             str(i) + ". " + "Визит (ID) = " + visit.attributes.item(0).value + "\n" + "Завершен"
-                                                                                                      " = " + visit.attributes.item(
-                                2).value + "\n" "Количество гостей = " + visit.attributes.item(3).value + "\n"
-                            + "-" * 47 + "\n"))
+                            " = " + visit.attributes.item(2).value + "\n" "Количество гостей = "
+                            + visit.attributes.item(3).value + "\n" + "-" * 47 + "\n"))
                             i = i + 1
 
                         for order in orders:
-                            self.text_field.insert(1.0, (str(y) + ". " + "Имя заказа = " +
-                                order.attributes.item(1).value + "\n" + "GUID = " + order.attributes.item(
-                                5).value + "\n" "Стол (ID) = " + order.attributes.item(6).value + "\n"
+                            self.text_field.insert(1.0, (str(y) + ". " + "ID заказа = " +
+                                order.attributes.item(1).value + "\n" + "Имя заказа = " +
+                                order.attributes.item(2).value + "\n" + "GUID = " + order.attributes.item(
+                                6).value + "\n" "Стол (ID) = " + order.attributes.item(7).value + "\n"
                                                     + "Стол (Код) = " + order.attributes.item(
-                                7).value + "\n" + "Категория Заказа (ID) = " + order.attributes.
+                                8).value + "\n" + "Категория Заказа (ID) = " + order.attributes.
                                                     item(
-                                8).value + "\n" + "Категория заказа (Код) = " + order.attributes.item(
-                                9).value + "\n" + "Тип Заказа (ID)"
+                                9).value + "\n" + "Категория заказа (Код) = " + order.attributes.item(
+                                10).value + "\n" + "Тип Заказа (ID)"
                                                   " = " + order.attributes.item(
-                                10).value + "\n" + "Тип Заказа(Код) = " + order.attributes.item(11).value +
+                                11).value + "\n" + "Тип Заказа(Код) = " + order.attributes.item(12).value +
                                                     "\n" + "Официант (ID) = " + order.attributes.item(
-                                12).value + "\n" + "Официант (код) = " + order.attributes
-                                                    .item(13).value + "\n" + "Сумма заказа = " + order.attributes.item(
-                                14).value + "\n" + "Сумма к оплате = "
+                                13).value + "\n" + "Официант (код) = " + order.attributes
+                                                    .item(14).value + "\n" + "Сумма заказа = " + order.attributes.item(
+                                15).value + "\n" + "Сумма к оплате = "
                                                     + order.attributes.item(
-                                15).value + "\n" + "PriceListSum = " + order.attributes.item(16).value + "\n" +
+                                16).value + "\n" + "PriceListSum = " + order.attributes.item(17).value + "\n" +
                                                     "Всего блюд = " + order.attributes.item(
-                                17).value + "\n" + "Завершен = " + order.attributes.item(18).value
+                                18).value + "\n" + "Завершен = " + order.attributes.item(19).value
                                                     + "\n" + "Счет = " + order.attributes.item(
-                                19).value + "\n" + "Открыт = " + order.attributes.item(20).value
+                                20).value + "\n" + "Открыт = " + order.attributes.item(21).value
                                                     + "\n" + "-" * 47 + "\n"))
                             y = y + 1
 
@@ -194,10 +194,9 @@ class Visual:
                                  '<OrderType code= "' + str(self.entry_xml_create_tab_2_arg1.get()) + '" />' \
                                 '<Table code= "' + str(self.entry_xml_create_tab_2_arg2.get()) + '" /></Order>' \
                                 '</RK7CMD></RK7Query>'
+            #print(xml_request_string)
             i_2 = ip_add.get()
-            # i_2 = '172.22.3.86'
             p_2 = port.get()
-            # p_2='4545'
             ''' Проверим, ввел ли ли пользователь ip и порт, если нет - выдадим ошибку'''
             if not i_2 and not p_2:
                 messagebox.showwarning(title='Error', message="Введите IP-адрес и порт!")
@@ -207,20 +206,26 @@ class Visual:
                 try:
                     requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
                     response_create_order = session.request(method='POST', url=ip_string_2, data=xml_request_string,
-                                                            auth=('admin', '1'), verify=False)
+                                                            auth=(id.get(), password.get()), verify=False)
                     # response_2 = requests.post(ip_string_2, data=xml_request_string, auth=('admin', '1'),verify=False)
                     # print(response_create_order.content)
                     xmldoc = minidom.parseString(response_create_order.text)
                     xmldoc.normalize()
+                    '''Вывод результатов запроса'''
+                    #print(response_create_order.text)
                     visitid = xmldoc.getElementsByTagName("RK7QueryResult")
                     for visit in visitid:
-                        visit = visit.attributes.item(5).value
-                        xml_save_order = '<RK7Query><RK7CMD CMD="SaveOrder" deferred="1" dontcheckLicense="1"><Order visit="' + \
+                        visit = visit.attributes.item(4).value
+                        print(visit)
+                        xml_save_order = '<RK7Query><RK7CMD CMD="SaveOrder" deferred="1" dontcheckLicense="1">' \
+                                         '<Order visit="' + \
                                          str(visit) + '" orderIdent="256" /><Session><Station code="' + \
                                          str(self.entry_xml_create_tab_2_arg3.get()) + '" /><Dish code="' + \
                                          str(self.entry_xml_create_tab_2_arg4.get()) + '" quantity="' + \
-                                         str(self.entry_xml_create_tab_2_arg4.get()) + '"></Dish></Session></RK7CMD></RK7Query>'
+                                         str(self.entry_xml_create_tab_2_arg4.get()) + '"></Dish></Session></RK7CMD>' \
+                                                                                       '</RK7Query>'
 
+                        print(xml_save_order)
                         xml_save_order_string = xml_save_order.encode('utf-8')
                         response_save_order = session.request(method='POST', url=ip_string_2, data=xml_save_order_string,
                                                               auth=('admin', '1'), verify=False)
@@ -241,10 +246,9 @@ class Visual:
                              str(self.entry_xml_create_tab_3_arg4.get()) + '" amount="' + \
                              str(self.entry_xml_create_tab_3_arg5.get()) \
                              + '"/></RK7CMD></RK7Query>'
+            print(xml_pay_string)
             i_3 = ip_add.get()
-            # i_2 = '172.22.3.86'
             p_3 = port.get()
-            # p_2='4545'
             ''' Проверим, ввел ли ли пользователь ip и порт, если нет - выдадим ошибку'''
             if not i_3 and not p_3:
                 messagebox.showwarning(title='Error', message="Введите IP-адрес и порт!")
@@ -254,7 +258,7 @@ class Visual:
                 try:
                     requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
                     response_pay_order = session.request(method='POST', url=ip_string_3, data=xml_pay_string,
-                    auth=('admin', '1'), verify=False)
+                    auth=(id.get(), password.get()), verify=False)
                     xmldoc = minidom.parseString(response_pay_order.text)
                     xmldoc.normalize()
                     response_pay_order.encoding = 'UTF-8'
@@ -281,6 +285,9 @@ class Visual:
         xml_arg3_tab_3 = StringVar()
         xml_arg4_tab_3 = StringVar()
         xml_arg5_tab_3 = StringVar()
+
+        id = StringVar()
+        password = StringVar()
 
         ip_add = StringVar()
         port = StringVar()
@@ -324,23 +331,34 @@ class Visual:
         '''Первая вкладка'''
 
         self.entry_xml_request_arg1 = ttk.Combobox(self.frame_1, values=['GetOrderList', 'GetWaiterList', 'GetRefList'],
-                                                                                            width=17, state='readonly')
-        self.entry_xml_request_arg1.place(x=15, y=70)
-        self.entry_xml_request_arg2 = ttk.Entry(self.frame_1, width=20, textvariable=xml_arg2).place(x=15, y=110)
-        self.entry_xml_request_arg3 = ttk.Entry(self.frame_1, width=20, textvariable=xml_arg3).place(x=15, y=150)
-        self.entry_xml_request_arg4 = ttk.Entry(self.frame_1, width=20, textvariable=xml_arg4).place(x=15, y=190)
-        self.entry_xml_request_arg5 = ttk.Entry(self.frame_1, width=20, textvariable=xml_arg5).place(x=15, y=230)
 
+                                                                                            width=17, state='readonly')
+        # Поле IP & port
         self.ip_label = Label(self.frame_1, text='IP-Address').place(x=25, y=8)
         self.port_label = Label(self.frame_1, text='Port').place(x=115, y=8)
         self.ip_address_entry = ttk.Entry(self.frame_1, width=20, textvariable=ip_add).place(x=15, y=30, width=90)
         self.port_entry = ttk.Entry(self.frame_1, width=20, textvariable=port).place(x=110, y=30, width=40)
 
+        # Поле ID & password
+
+        self.id_label = Label(self.frame_1, text='User name').place(x=30, y=55)
+        self.password_label = Label(self.frame_1, text='Password').place(x=102, y=55)
+        self.id_address_entry = ttk.Entry(self.frame_1, width=20, textvariable=id).place(x=15, y=75, width=90)
+        self.password_entry = ttk.Entry(self.frame_1, width=20, textvariable=password)
+        self.password_entry.place(x=110, y=75, width=40)
+        self.password_entry.config(show="*")
+
+
+        self.entry_xml_request_arg1.place(x=15, y=116)
+        self.entry_xml_request_arg2 = ttk.Entry(self.frame_1, width=20, textvariable=xml_arg2).place(x=15, y=150)
+        self.entry_xml_request_arg3 = ttk.Entry(self.frame_1, width=20, textvariable=xml_arg3).place(x=15, y=190)
+        self.entry_xml_request_arg4 = ttk.Entry(self.frame_1, width=20, textvariable=xml_arg4).place(x=15, y=230)
+        self.entry_xml_request_arg5 = ttk.Entry(self.frame_1, width=20, textvariable=xml_arg5).place(x=15, y=270)
 
         self.text_field = Text(self.frame_1, height=25, width=70, wrap=WORD, relief=SOLID)
         self.text_field.place(x=170, y=70)
 
-        self.button_request = ttk.Button(self.frame_1, text='Request', command=request).place(x=15, y=270)
+        self.button_request = ttk.Button(self.frame_1, text='Request', command=request).place(x=15, y=305)
 
         self.scrollbar = ttk.Scrollbar(self.frame_1, orient=VERTICAL, command=self.text_field.yview)
         self.scrollbar.pack(side=RIGHT, fill=Y)
@@ -349,38 +367,45 @@ class Visual:
 
         '''Вторая вкладка'''
 
-        # Тип заказа
-        self.entry_xml_create_tab_2_arg1 = ttk.Entry(self.frame_2, width=20, textvariable=xml_arg1_tab_2)
-        self.entry_xml_create_tab_2_arg1.place(x=15, y=90)
-        self.label_xml_create_tab_2_arg1 = Label(self.frame_2, text='Тип заказа').place(x=15, y=68)
-        # Стол
-        self.entry_xml_create_tab_2_arg2 = ttk.Entry(self.frame_2, width=20, textvariable=xml_arg2_tab_2)
-        self.entry_xml_create_tab_2_arg2.place(x=15, y=132)
-        self.label_xml_create_tab_2_arg2 = Label(self.frame_2, text='Стол').place(x=15, y=111)
-        # Код станции
-        self.entry_xml_create_tab_2_arg3 = ttk.Entry(self.frame_2, width=20, textvariable=xml_arg3_tab_2)
-        self.entry_xml_create_tab_2_arg3.place(x=15, y=174)
-        self.label_xml_create_tab_2_arg3 = Label(self.frame_2, text='Код станции').place(x=15, y=153)
-        # Код блюда
-        self.entry_xml_create_tab_2_arg4 = ttk.Entry(self.frame_2, width=20, textvariable=xml_arg4_tab_2)
-        self.entry_xml_create_tab_2_arg4.place(x=15, y=216)
-        self.label_xml_create_tab_2_arg4 = Label(self.frame_2, text='Код блюда').place(x=15, y=195)
-        # Количество блюда
-        self.entry_xml_create_tab_2_arg5 = ttk.Entry(self.frame_2, width=20, textvariable=xml_arg5_tab_2)
-        self.entry_xml_create_tab_2_arg5.place(x=15, y=259)
-        self.label_xml_create_tab_2_arg5 = Label(self.frame_2, text='Количество блюд').place(x=15, y=237)
-
+        # Поле IP & port
         self.ip_label_tab_2 = Label(self.frame_2, text='IP-Address').place(x=25, y=8)
         self.port_label_tab_2 = Label(self.frame_2, text='Port').place(x=115, y=8)
-
         self.ip_address_entry_tab_2 = ttk.Entry(self.frame_2, width=20, textvariable=ip_add).place(x=15, y=30, width=90)
         self.port_entry_tab_2 = ttk.Entry(self.frame_2, width=20, textvariable=port).place(x=110, y=30, width=40)
+        # Поле ID & password
+        self.id_label_tab_2 = Label(self.frame_2, text='User name').place(x=30, y=53)
+        self.password_label_tab_2 = Label(self.frame_2, text='Password').place(x=102, y=53)
+        self.id_address_entry_tab_2 = ttk.Entry(self.frame_2, width=20, textvariable=id).place(x=15, y=75, width=90)
+        self.password_entry_tab_2 = ttk.Entry(self.frame_2, width=20, textvariable=password)
+        self.password_entry_tab_2.place(x=110, y=75, width=40)
+        self.password_entry_tab_2.config(show="*")
+        # Тип заказа
+        self.label_xml_create_tab_2_arg1 = Label(self.frame_2, text='Тип заказа').place(x=15, y=98)
+        self.entry_xml_create_tab_2_arg1 = ttk.Entry(self.frame_2, width=20, textvariable=xml_arg1_tab_2)
+        self.entry_xml_create_tab_2_arg1.place(x=15, y=120)
+        # Стол
+        self.label_xml_create_tab_2_arg2 = Label(self.frame_2, text='Стол').place(x=15, y=141)
+        self.entry_xml_create_tab_2_arg2 = ttk.Entry(self.frame_2, width=20, textvariable=xml_arg2_tab_2)
+        self.entry_xml_create_tab_2_arg2.place(x=15, y=163)
+        # Код станции
+        self.label_xml_create_tab_2_arg3 = Label(self.frame_2, text='Код станции').place(x=15, y=184)
+        self.entry_xml_create_tab_2_arg3 = ttk.Entry(self.frame_2, width=20, textvariable=xml_arg3_tab_2)
+        self.entry_xml_create_tab_2_arg3.place(x=15, y=205)
+        # Код блюда
+        self.label_xml_create_tab_2_arg4 = Label(self.frame_2, text='Код блюда').place(x=15, y=228)
+        self.entry_xml_create_tab_2_arg4 = ttk.Entry(self.frame_2, width=20, textvariable=xml_arg4_tab_2)
+        self.entry_xml_create_tab_2_arg4.place(x=15, y=250)
+        # Количество блюда
+        self.label_xml_create_tab_2_arg5 = Label(self.frame_2, text='Количество блюд').place(x=15, y=272)
+        self.entry_xml_create_tab_2_arg5 = ttk.Entry(self.frame_2, width=20, textvariable=xml_arg5_tab_2)
+        self.entry_xml_create_tab_2_arg5.place(x=15, y=295)
 
-        # Поле текста 2
+
+        # Поле текста
         self.text_field_tab_2 = Text(self.frame_2, height=25, width=70, wrap=WORD, relief=SOLID)
         self.text_field_tab_2.place(x=170, y=70)
-
-        self.button_create = ttk.Button(self.frame_2, text='Создать', command=create).place(x=15, y=290)
+        # Кнопка "Создать"
+        self.button_create = ttk.Button(self.frame_2, text='Создать', command=create).place(x=15, y=322)
 
         self.scrollbar_tab_2 = ttk.Scrollbar(self.frame_2, orient=VERTICAL, command=self.text_field_tab_2.yview)
         self.scrollbar_tab_2.pack(side=RIGHT, fill=Y)
@@ -391,25 +416,25 @@ class Visual:
         '''Третья вкладка'''
 
         # GUID заказа
+        self.label_xml_create_tab_3_arg1 = Label(self.frame_3, text='GUID заказа').place(x=15, y=68)
         self.entry_xml_create_tab_3_arg1 = ttk.Entry(self.frame_3, width=20, textvariable=xml_arg1_tab_2)
         self.entry_xml_create_tab_3_arg1.place(x=15, y=90)
-        self.label_xml_create_tab_3_arg1 = Label(self.frame_3, text='GUID заказа').place(x=15, y=68)
         # Код кассира
+        self.label_xml_create_tab_3_arg2 = Label(self.frame_3, text='Код кассира').place(x=15, y=111)
         self.entry_xml_create_tab_3_arg2 = ttk.Entry(self.frame_3, width=20, textvariable=xml_arg2_tab_2)
         self.entry_xml_create_tab_3_arg2.place(x=15, y=132)
-        self.label_xml_create_tab_3_arg2 = Label(self.frame_3, text='Код кассира').place(x=15, y=111)
         # Код станции
+        self.label_xml_create_tab_3_arg3 = Label(self.frame_3, text='Код станции').place(x=15, y=153)
         self.entry_xml_create_tab_3_arg3 = ttk.Entry(self.frame_3, width=20, textvariable=xml_arg3_tab_2)
         self.entry_xml_create_tab_3_arg3.place(x=15, y=174)
-        self.label_xml_create_tab_3_arg3 = Label(self.frame_3, text='Код станции').place(x=15, y=153)
         # ID валюты
+        self.label_xml_create_tab_3_arg4 = Label(self.frame_3, text='ID валюты').place(x=15, y=195)
         self.entry_xml_create_tab_3_arg4 = ttk.Entry(self.frame_3, width=20, textvariable=xml_arg4_tab_2)
         self.entry_xml_create_tab_3_arg4.place(x=15, y=216)
-        self.label_xml_create_tab_3_arg4 = Label(self.frame_3, text='ID валюты').place(x=15, y=195)
         # Сумма
+        self.label_xml_create_tab_3_arg5 = Label(self.frame_3, text='Сумма').place(x=15, y=237)
         self.entry_xml_create_tab_3_arg5 = ttk.Entry(self.frame_3, width=20, textvariable=xml_arg5_tab_2)
         self.entry_xml_create_tab_3_arg5.place(x=15, y=259)
-        self.label_xml_create_tab_3_arg5 = Label(self.frame_3, text='Сумма').place(x=15, y=237)
 
         self.ip_address_entry_tab_3 = ttk.Entry(self.frame_3, width=20, textvariable=ip_add).place(x=15, y=30, width=90)
         self.port_entry_tab_3 = ttk.Entry(self.frame_3, width=20, textvariable=port).place(x=110, y=30, width=40)
