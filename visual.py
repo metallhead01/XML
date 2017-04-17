@@ -1,4 +1,4 @@
-'''
+﻿'''
 Сделано:
 1. Прогресс бар отображется корректно
 2. Разобраться с записью в файл и чтением из файла пресетов
@@ -10,7 +10,7 @@
 
 '''
 
-
+import os
 from tkinter import *
 from tkinter import ttk
 from tkinter import messagebox
@@ -23,8 +23,26 @@ from xml.dom import minidom
 class Visual:
     def __init__(self, root):
         self.root = root
-        root.title("XML Parser v.1.3.0")
-        root.iconbitmap(r'images\7.ico')
+        root.title("XML Parser v.1.3.3")
+
+        '''Добавляем функцию для сборки. В ней две ветки - try: функция проверяет используется ли frozen-режим (режимо
+        одного .exe или обычное выполнение скрипта. Если интерпритатор видит, что метод "_MEIPASS" отсутствует (а он 
+        используется только во frozen-режиме), то он идет по второй ветке и выполняет код в обычном режиме)'''
+        def resource_path(relative_path):
+            """ Get absolute path to resource, works for dev and for PyInstaller """
+            try:
+            # PyInstaller creates a temp folder and stores path in _MEIPASS
+                base_path = sys._MEIPASS
+            except Exception:
+                base_path = os.path.abspath(".")
+            return os.path.join(base_path, relative_path)
+
+        '''Задаем переменную для обработки пути с картинкой'''
+        icon = resource_path(r'C:\GitHub\XML\images\7.ico')
+        root.iconbitmap(icon)
+        #icon = resource_path("7.ico")
+        #print(icon)
+        #root.iconbitmap(r'images\7.ico')
 
         '''Зададим размер и положение экрана в зависимости от размера экрана пользователя'''
         #root.geometry("900x700+500+600")
