@@ -20,6 +20,7 @@ import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 import json
 from xml.dom import minidom
+from xml.dom.minidom import parse, Node
 from time import gmtime, strftime
 
 
@@ -84,7 +85,13 @@ class Visual:
                 xml_request_string = '<RK7Query><RK7CMD CMD="GetOrderMenu" StationCode="' + str(xml_arg3_tab_2.get())\
                                      + '" DateTime="' + strftime("%Y-%m-%d %H:%M:%S") + '" /></RK7Query>'
                 ip_string = 'https://' + i + ":" + p + '/rk7api/v0/xmlinterface.xml'
+
+                # Задали пустой список, в котором мы будем хранить значения ID и цен блюд, полученные из парсинга
+                # запроса ниже
                 l_ist = []
+                # Задали пустой список для хранения уже обработанного списка l_ist
+                l_ist_dishes = []
+                l_ist_prices = []
                 try:
                     # Убираем warnings об SSL (warnings выводятся даже при отключении SSL)
                     requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
@@ -99,18 +106,38 @@ class Visual:
                     print(response.text)
                     xmldoc = minidom.parseString(response.text)
                     xmldoc.normalize()
-                    dishes = xmldoc.getElementsByTagName("Dishes")
-                    for dish in dishes:
-                        l_ist.append(dish.attributes.item(0).value)
-                        l_ist.append(dish.attributes.item(1).value)
+
+
+                    for node1 in xmldoc.getElementsByTagName('Dishes'):
+                        for node2 in node1.childNodes:
+                            if node2.nodeType == Node.TEXT_NODE:
+                                print(node2.data)
+                    '''
+                    # Парсим элементы по тегу "Item"
+                    items = xmldoc.getElementsByTagName("Item")
+                    for item in items:
+                        # Получаем значения атрибутов тега "Item" - "Ident" и "Price" и кладем их в созданный
+                        #  ранее список l_ist, при этом "Ident" пишется с нечетным индексом, а "Price" с четным.
+                        l_ist.append(item.getAttribute("Ident"))
+                        l_ist.append(item.getAttribute("Price"))
+                    '''
                 except OSError as e:
                     # print(e)
                     messagebox.showerror(title='Connection error', message=e)
                     with open('log.txt', 'a', encoding='UTF-8') as log:
                         log.write(strftime(str("%H:%M:%S %Y-%m-%d") + str(e) + '\n'))
                 print(l_ist)
-                return l_ist
 
+                for number in l_ist:
+                    if number % 2 != 0:
+                        #l_ist_dishes += [number]
+                        l_ist_dishes.append(number)
+                    else:
+                        # l_ist_prices += [number]
+                        l_ist_prices.append(number)
+                print(l_ist_dishes)
+                print(l_ist_prices)
+                # return l_ist
 
 
         def open_file():
@@ -467,13 +494,14 @@ class Visual:
         self.entry_xml_create_tab_2_arg5 = ttk.Entry(self.frame_2, width=20, textvariable=xml_arg5_tab_2)
         self.entry_xml_create_tab_2_arg5.place(x=15, y=295)
 
-
         # Поле текста
         self.text_field_tab_2 = Text(self.frame_2, height=25, width=70, wrap=WORD, relief=SOLID)
         self.text_field_tab_2.place(x=170, y=70)
+
+        # Кнопка "Запросить меню"
+        self.button_request_menu = ttk.Button(self.frame_2, text='Запросить меню', command=order_menu).place(x=15, y=327)
         # Кнопка "Создать"
-        self.button_create = ttk.Button(self.frame_2, text='Создать', command=create).place(x=15, y=355)
-        self.button_request_menu = ttk.Button(self.frame_2, text='Запросить меню', command=order_menu).place(x=15, y=325)
+        self.button_create = ttk.Button(self.frame_2, text='Создать', command=create).place(x=15, y=363)
 
         self.scrollbar_tab_2 = ttk.Scrollbar(self.frame_2, orient=VERTICAL, command=self.text_field_tab_2.yview)
         self.scrollbar_tab_2.pack(side=RIGHT, fill=Y)
