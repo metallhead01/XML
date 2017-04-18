@@ -71,7 +71,7 @@ class Visual:
         # alive connections).
         session = requests.session()
 
-        def order_menu:
+        def order_menu():
             i = ip_add.get()
             p = port.get()
             ''' Проверим, ввел ли ли пользователь ip и порт, если нет - выдадим ошибку'''
@@ -84,7 +84,7 @@ class Visual:
                 xml_request_string = '<RK7Query><RK7CMD CMD="GetOrderMenu" StationCode="' + str(xml_arg3_tab_2.get())\
                                      + '" DateTime="' + strftime("%Y-%m-%d %H:%M:%S") + '" /></RK7Query>'
                 ip_string = 'https://' + i + ":" + p + '/rk7api/v0/xmlinterface.xml'
-
+                l_ist = []
                 try:
                     # Убираем warnings об SSL (warnings выводятся даже при отключении SSL)
                     requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
@@ -96,14 +96,20 @@ class Visual:
                         log.write(strftime(str("%H:%M:%S %Y-%m-%d") + ' GetOrderMenu query result' + ' ' + response.text
                                   + '\n'))
 
-                    # print(response.text)
+                    print(response.text)
                     xmldoc = minidom.parseString(response.text)
                     xmldoc.normalize()
                     dishes = xmldoc.getElementsByTagName("Dishes")
                     for dish in dishes:
-                        self.text_field.insert(1.0, (
-                            "Визит (ID) = " + visit.attributes.item(0).value + "\n" + "Завершен = " + visit.attributes.item(
-                                2).value + "\n" "Количество гостей = " + visit.attributes.item(3).value + "\n" + "-" * 47 + "\n"))
+                        l_ist.append(dish.attributes.item(0).value)
+                        l_ist.append(dish.attributes.item(1).value)
+                except OSError as e:
+                    # print(e)
+                    messagebox.showerror(title='Connection error', message=e)
+                    with open('log.txt', 'a', encoding='UTF-8') as log:
+                        log.write(strftime(str("%H:%M:%S %Y-%m-%d") + str(e) + '\n'))
+                print(l_ist)
+                return l_ist
 
 
 
@@ -466,7 +472,8 @@ class Visual:
         self.text_field_tab_2 = Text(self.frame_2, height=25, width=70, wrap=WORD, relief=SOLID)
         self.text_field_tab_2.place(x=170, y=70)
         # Кнопка "Создать"
-        self.button_create = ttk.Button(self.frame_2, text='Создать', command=create).place(x=15, y=322)
+        self.button_create = ttk.Button(self.frame_2, text='Создать', command=create).place(x=15, y=355)
+        self.button_request_menu = ttk.Button(self.frame_2, text='Запросить меню', command=order_menu).place(x=15, y=325)
 
         self.scrollbar_tab_2 = ttk.Scrollbar(self.frame_2, orient=VERTICAL, command=self.text_field_tab_2.yview)
         self.scrollbar_tab_2.pack(side=RIGHT, fill=Y)
