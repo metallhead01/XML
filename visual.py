@@ -71,6 +71,42 @@ class Visual:
         # alive connections).
         session = requests.session()
 
+        def order_menu:
+            i = ip_add.get()
+            p = port.get()
+            ''' Проверим, ввел ли ли пользователь ip и порт, если нет - выдадим ошибку'''
+            if not i and not p:
+                messagebox.showwarning(title='Error', message="Введите IP-адрес и порт!")
+
+            else:
+                '''Собираем строку запроса'''
+                # Основное тело запроса
+                xml_request_string = '<RK7Query><RK7CMD CMD="GetOrderMenu" StationCode="' + str(xml_arg3_tab_2.get())\
+                                     + '" DateTime="' + strftime("%Y-%m-%d %H:%M:%S") + '" /></RK7Query>'
+                ip_string = 'https://' + i + ":" + p + '/rk7api/v0/xmlinterface.xml'
+
+                try:
+                    # Убираем warnings об SSL (warnings выводятся даже при отключении SSL)
+                    requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+                    # Запрос с выключенным SSL
+                    response = session.request(method='GET', url=ip_string, data=xml_request_string, auth=(id.get(),
+                                                password.get()), verify=False)
+
+                    with open('log.txt', 'a', encoding='UTF-8') as log:
+                        log.write(strftime(str("%H:%M:%S %Y-%m-%d") + ' GetOrderMenu query result' + ' ' + response.text
+                                  + '\n'))
+
+                    # print(response.text)
+                    xmldoc = minidom.parseString(response.text)
+                    xmldoc.normalize()
+                    dishes = xmldoc.getElementsByTagName("Dishes")
+                    for dish in dishes:
+                        self.text_field.insert(1.0, (
+                            "Визит (ID) = " + visit.attributes.item(0).value + "\n" + "Завершен = " + visit.attributes.item(
+                                2).value + "\n" "Количество гостей = " + visit.attributes.item(3).value + "\n" + "-" * 47 + "\n"))
+
+
+
         def open_file():
             try:
                 file_path = filedialog.askopenfilename(title="Choose your file", filetypes=[("json files","*.json")])
@@ -201,7 +237,6 @@ class Visual:
                     with open('log.txt', 'a', encoding='UTF-8') as log:
                         log.write(strftime(str("%H:%M:%S %Y-%m-%d") + str(e) + '\n'))
 
-                    # return(soup)
 
         def create():
             xml_request_string = '<?xml version="1.0" encoding="UTF-8"?><RK7Query><RK7CMD CMD="CreateOrder"><Order>' \
@@ -415,8 +450,12 @@ class Visual:
         self.entry_xml_create_tab_2_arg3.place(x=15, y=205)
         # Код блюда
         self.label_xml_create_tab_2_arg4 = Label(self.frame_2, text='Код блюда').place(x=15, y=228)
-        self.entry_xml_create_tab_2_arg4 = ttk.Entry(self.frame_2, width=20, textvariable=xml_arg4_tab_2)
+        self.entry_xml_create_tab_2_arg4 = ttk.Combobox(self.frame_2, values=[order_menu], width=17, state='readonly')
         self.entry_xml_create_tab_2_arg4.place(x=15, y=250)
+
+        '''
+        self.entry_xml_create_tab_2_arg4 = ttk.Entry(self.frame_2, width=20, textvariable=xml_arg4_tab_2)
+        '''
         # Количество блюда
         self.label_xml_create_tab_2_arg5 = Label(self.frame_2, text='Количество блюд').place(x=15, y=272)
         self.entry_xml_create_tab_2_arg5 = ttk.Entry(self.frame_2, width=20, textvariable=xml_arg5_tab_2)
