@@ -158,6 +158,7 @@ class Visual:
             p = port.get()
             ''' Проверим, ввел ли ли пользователь ip и порт, если нет - выдадим ошибку'''
             if not i and not p:
+
                 messagebox.showwarning(title='Error', message="Введите IP-адрес и порт!")
 
             else:
