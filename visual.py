@@ -192,34 +192,35 @@ class Visual:
                         parsed_order_nodes = ET.fromstring(response.content)
                         for item in parsed_order_nodes.findall("./Visit"):
                             visit = (item.attrib)
-                            for item_1 in parsed_order_nodes.findall("./Visit/Orders/Order"):
-                                order = (item_1.attrib)
+                            order = item[0][0].attrib
+                            #for item_1 in parsed_order_nodes.findall("./Visit/Orders/Order"):
+                                #order = (item_1.attrib)
                                 
-                                self.text_field.insert(1.0, (str(i) + ". " +
-                                    "Визит (ID) = " + visit.get('VisitID') + "\n" +
-                                    "Завершен= " + visit.get(
-                                    'Finished') + "\n" + "-" * 47 + "\n" +
-                                    "Количество гостей = " + visit.get(
-                                    'GuestsCount') + "ID заказа = " + order.get(
-                                    'OrderID') + "\n" + "Имя заказа = " + order.get(
-                                    'OrderName') + "\n" + "GUID = " + order.get(
-                                    'guid') + "\n" "Стол (ID) = " + order.get(
-                                    'TableID') + "\n" + "Стол (Код) = " + order.get(
-                                    'TableCode') + "\n" + "Категория Заказа (ID) = " + order.get(
-                                    'OrderCategID') + "\n" + "Категория заказа (Код) = " + order.get(
-                                    'OrderCategCode') + "\n" + "Тип Заказа (ID) = " + order.get(
-                                    'OrderTypeID') + "\n" + "Тип Заказа(Код) = " + order.get(
-                                    'OrderTypeCode') + "\n" + "Официант (ID) = " + order.get(
-                                    'WaiterID') + "\n" + "Официант (код) = " + order.get(
-                                    'WaiterCode') + "\n" + "Сумма заказа = " + order.get(
-                                    'OrderSum') + "\n" + "Сумма к оплате = " + order.get(
-                                    'ToPaySum') + "\n" + "PriceListSum = " + order.get(
-                                    'PriceListSum') + "\n" + "Всего блюд = " + order.get(
-                                    'TotalPieces') + "\n" + "Счет = " + order.get(
-                                    'Bill') + "\n" + "Открыт = " + order.get(
-                                    'CreateTime') + "\n" + "Завершен = " + order.get(
-                                    'Finished') + "\n" +"=" * 47 + "\n"))
-                                i += 1
+                            self.text_field.insert(1.0, (str(i) + ". " +
+                                "Визит (ID) = " + visit.get('VisitID') + "\n" +
+                                "Завершен= " + visit.get(
+                                'Finished') + "\n" + "-" * 47 + "\n" +
+                                "Количество гостей = " + visit.get(
+                                'GuestsCount') + "ID заказа = " + order.get(
+                                'OrderID') + "\n" + "Имя заказа = " + order.get(
+                                'OrderName') + "\n" + "GUID = " + order.get(
+                                'guid') + "\n" "Стол (ID) = " + order.get(
+                                'TableID') + "\n" + "Стол (Код) = " + order.get(
+                                'TableCode') + "\n" + "Категория Заказа (ID) = " + order.get(
+                                'OrderCategID') + "\n" + "Категория заказа (Код) = " + order.get(
+                                'OrderCategCode') + "\n" + "Тип Заказа (ID) = " + order.get(
+                                'OrderTypeID') + "\n" + "Тип Заказа(Код) = " + order.get(
+                                'OrderTypeCode') + "\n" + "Официант (ID) = " + order.get(
+                                'WaiterID') + "\n" + "Официант (код) = " + order.get(
+                                'WaiterCode') + "\n" + "Сумма заказа = " + order.get(
+                                'OrderSum') + "\n" + "Сумма к оплате = " + order.get(
+                                'ToPaySum') + "\n" + "PriceListSum = " + order.get(
+                                'PriceListSum') + "\n" + "Всего блюд = " + order.get(
+                                'TotalPieces') + "\n" + "Счет = " + order.get(
+                                'Bill') + "\n" + "Открыт = " + order.get(
+                                'CreateTime') + "\n" + "Завершен = " + order.get(
+                                'Finished') + "\n" +"=" * 47 + "\n"))
+                            i += 1
 
 
                     elif a1 == "GetWaiterList":
@@ -308,8 +309,7 @@ class Visual:
                              str(self.entry_xml_create_tab_3_arg2.get()) + '"/><Station code="' + \
                              str(self.entry_xml_create_tab_3_arg3.get()) + '"/><Payment id="' + \
                              str(self.entry_xml_create_tab_3_arg4.get()) + '" amount="' + \
-                             str(self.entry_xml_create_tab_3_arg5.get()) \
-                             + '"/></RK7CMD></RK7Query>'
+                             str(self.entry_xml_create_tab_3_arg5.get()) + '"/></RK7CMD></RK7Query>'
             print(xml_pay_string)
             i_3 = ip_add.get()
             p_3 = port.get()
@@ -323,6 +323,7 @@ class Visual:
                     requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
                     response_pay_order = session.request(method='POST', url=ip_string_3, data=xml_pay_string,
                     auth=(id.get(), password.get()), verify=False)
+
                     xmldoc = minidom.parseString(response_pay_order.text)
                     xmldoc.normalize()
                     response_pay_order.encoding = 'UTF-8'
