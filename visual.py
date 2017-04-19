@@ -20,6 +20,7 @@ import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 import json
 from xml.dom import minidom
+import xml.etree.ElementTree as ET
 from xml.dom.minidom import parse, Node
 from time import gmtime, strftime
 
@@ -32,7 +33,7 @@ class Visual:
         with open('log.txt', 'a') as log:
             log.write('\n' + strftime(str("%H:%M:%S %Y-%m-%d") + ' Application started.' + '\n'))
 
-        root.title("XML Parser v.1.3.5")
+        root.title("XML Parser v.1.3.6")
 
         '''Добавляем функцию для сборки. В ней две ветки - try: функция проверяет используется ли frozen-режим (режимо
         одного .exe или обычное выполнение скрипта. Если интерпритатор видит, что метод "_MEIPASS" отсутствует (а он 
@@ -75,6 +76,8 @@ class Visual:
         def order_menu():
             i = ip_add.get()
             p = port.get()
+            idents = []
+            prices = []
             ''' Проверим, ввел ли ли пользователь ip и порт, если нет - выдадим ошибку'''
             if not i and not p:
                 messagebox.showwarning(title='Error', message="Введите IP-адрес и порт!")
@@ -85,13 +88,6 @@ class Visual:
                 xml_request_string = '<RK7Query><RK7CMD CMD="GetOrderMenu" StationCode="' + str(xml_arg3_tab_2.get())\
                                      + '" DateTime="' + strftime("%Y-%m-%d %H:%M:%S") + '" /></RK7Query>'
                 ip_string = 'https://' + i + ":" + p + '/rk7api/v0/xmlinterface.xml'
-
-                # Задали пустой список, в котором мы будем хранить значения ID и цен блюд, полученные из парсинга
-                # запроса ниже
-                l_ist = []
-                # Задали пустой список для хранения уже обработанного списка l_ist
-                l_ist_dishes = []
-                l_ist_prices = []
                 try:
                     # Убираем warnings об SSL (warnings выводятся даже при отключении SSL)
                     requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
@@ -103,41 +99,27 @@ class Visual:
                         log.write(strftime(str("%H:%M:%S %Y-%m-%d") + ' GetOrderMenu query result' + ' ' + response.text
                                   + '\n'))
 
-                    print(response.text)
-                    xmldoc = minidom.parseString(response.text)
-                    xmldoc.normalize()
+                    # print(response.text)
+                    '''С помощью The ElementTree XML API делаем парсинг ответа из строки'''
+                    parsed_ident_nodes = ET.fromstring(response.content)
+                    '''Перебираем все ноды "Item" в прямой дочерней ноде "Dishes"'''
+                    for item in parsed_ident_nodes.findall("./Dishes/Item"):
+                        '''В переменную "attr_of_item_node" передаем значения всех атрибутов (2 штуки)'''
+                        attr_of_item_node = (item.attrib)
+                        '''Раскладываем по спискам значения атрибутов'''
+                        idents.append(attr_of_item_node.get('Ident'))
+                        prices.append(attr_of_item_node.get('Prices'))
+                    '''Заполняем значения Combobox (см. кнопка "Запросить меню" во второй секции)'''
+                    self.entry_xml_create_tab_2_arg4['values'] = idents
 
 
-                    for node1 in xmldoc.getElementsByTagName('Dishes'):
-                        for node2 in node1.childNodes:
-                            if node2.nodeType == Node.TEXT_NODE:
-                                print(node2.data)
-                    '''
-                    # Парсим элементы по тегу "Item"
-                    items = xmldoc.getElementsByTagName("Item")
-                    for item in items:
-                        # Получаем значения атрибутов тега "Item" - "Ident" и "Price" и кладем их в созданный
-                        #  ранее список l_ist, при этом "Ident" пишется с нечетным индексом, а "Price" с четным.
-                        l_ist.append(item.getAttribute("Ident"))
-                        l_ist.append(item.getAttribute("Price"))
-                    '''
+                    return(idents,prices)
+
                 except OSError as e:
                     # print(e)
                     messagebox.showerror(title='Connection error', message=e)
                     with open('log.txt', 'a', encoding='UTF-8') as log:
                         log.write(strftime(str("%H:%M:%S %Y-%m-%d") + str(e) + '\n'))
-                print(l_ist)
-
-                for number in l_ist:
-                    if number % 2 != 0:
-                        #l_ist_dishes += [number]
-                        l_ist_dishes.append(number)
-                    else:
-                        # l_ist_prices += [number]
-                        l_ist_prices.append(number)
-                print(l_ist_dishes)
-                print(l_ist_prices)
-                # return l_ist
 
 
         def open_file():
@@ -483,15 +465,13 @@ class Visual:
         self.entry_xml_create_tab_2_arg3.place(x=15, y=205)
         # Код блюда
         self.label_xml_create_tab_2_arg4 = Label(self.frame_2, text='Код блюда').place(x=15, y=228)
-        self.entry_xml_create_tab_2_arg4 = ttk.Combobox(self.frame_2, values=[order_menu], width=17, state='readonly')
+        self.entry_xml_create_tab_2_arg4 = ttk.Combobox(self.frame_2, textvariable=xml_arg3_tab_3,
+                                                        width=17, state='readonly')
         self.entry_xml_create_tab_2_arg4.place(x=15, y=250)
 
-        '''
-        self.entry_xml_create_tab_2_arg4 = ttk.Entry(self.frame_2, width=20, textvariable=xml_arg4_tab_2)
-        '''
         # Количество блюда
         self.label_xml_create_tab_2_arg5 = Label(self.frame_2, text='Количество блюд').place(x=15, y=272)
-        self.entry_xml_create_tab_2_arg5 = ttk.Entry(self.frame_2, width=20, textvariable=xml_arg5_tab_2)
+        self.entry_xml_create_tab_2_arg5 = ttk.Entry(self.frame_2, width=20, textvariable=xml_arg4_tab_2)
         self.entry_xml_create_tab_2_arg5.place(x=15, y=295)
 
         # Поле текста
@@ -499,7 +479,9 @@ class Visual:
         self.text_field_tab_2.place(x=170, y=70)
 
         # Кнопка "Запросить меню"
-        self.button_request_menu = ttk.Button(self.frame_2, text='Запросить меню', command=order_menu).place(x=15, y=327)
+        '''См. кнопку "Код блюда"'''
+        self.button_request_menu = ttk.Button(self.frame_2, text='Запросить меню', command=order_menu).place(x=15,
+                                                                                                             y=327)
         # Кнопка "Создать"
         self.button_create = ttk.Button(self.frame_2, text='Создать', command=create).place(x=15, y=363)
 
