@@ -276,7 +276,11 @@ class Visual:
                     '''Перебираем все ноды "Item" в прямой дочерней ноде "Dishes"'''
                     parsed_create_order = parsed_ident_nodes.attrib
                     visit_id = parsed_create_order.get('VisitID')
+                    '''Запишем GUID заказа в поле "GUID заказа" третьей вкладки.
+                    Для корректной вставки обрежим фигурные скобки из ответа в начале и в конце'''
 
+                    a = parsed_create_order.get('guid')
+                    xml_arg1_tab_3.set(a[1:-1])
                     xml_save_order = '<RK7Query><RK7CMD CMD="SaveOrder" deferred="1" dontcheckLicense="1">' \
                                          '<Order visit="' + \
                                          str(visit_id) + '" orderIdent="256" /><Session><Station code="' + \
