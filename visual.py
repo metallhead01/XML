@@ -272,32 +272,29 @@ class Visual:
                     response_create_order = session.request(method='POST', url=ip_string_2, data=xml_request_string,
                                                             auth=(id.get(), password.get()), verify=False)
                     # response_2 = requests.post(ip_string_2, data=xml_request_string, auth=('admin', '1'),verify=False)
-                    print(response_create_order.content)
-                    xmldoc = minidom.parseString(response_create_order.text)
-                    xmldoc.normalize()
-                    '''Вывод результатов запроса'''
-                    #print(response_create_order.text)
-                    visitid = xmldoc.getElementsByTagName("RK7QueryResult")
-                    for visit in visitid:
-                        visit = visit.attributes.item(5).value
-                        xml_save_order = '<RK7Query><RK7CMD CMD="SaveOrder" deferred="1" dontcheckLicense="1">' \
+                    parsed_ident_nodes = ET.fromstring(response_create_order.content)
+                    '''Перебираем все ноды "Item" в прямой дочерней ноде "Dishes"'''
+                    parsed_create_order = parsed_ident_nodes.attrib
+                    visit_id = parsed_create_order.get('VisitID')
+
+                    xml_save_order = '<RK7Query><RK7CMD CMD="SaveOrder" deferred="1" dontcheckLicense="1">' \
                                          '<Order visit="' + \
-                                         str(visit) + '" orderIdent="256" /><Session><Station code="' + \
-                                         str(self.entry_xml_create_tab_2_arg3.get()) + '" /><Dish code="' + \
+                                         str(visit_id) + '" orderIdent="256" /><Session><Station code="' + \
+                                         str(self.entry_xml_create_tab_2_arg3.get()) + '" /><Dish id="' + \
                                          str(self.entry_xml_create_tab_2_arg4.get()) + '" quantity="' + \
                                          str(self.entry_xml_create_tab_2_arg4.get()) + '"></Dish></Session></RK7CMD>' \
                                                                                        '</RK7Query>'
 
-                        xml_save_order_string = xml_save_order.encode('utf-8')
-                        response_save_order = session.request(method='POST', url=ip_string_2, data=xml_save_order_string,
-                                                              auth=('admin', '1'), verify=False)
-                        # Перекодируем response_save_order в нужную нам кодировку (кириллица поломана)
-                        response_save_order.encoding = 'UTF-8'
-                        # Уже перекодированные данные выводим с помощью метода .text
-                        self.text_field_tab_2.insert(1.0, ('# ' + response_save_order.text + "\n" + "=" * 70 + "\n"))
-                        with open('log.txt', 'a', encoding='UTF-8') as log:
-                            log.write(strftime(str("%H:%M:%S %Y-%m-%d") + ' SaveOrder request result' +
-                                               response_save_order.text + '\n'))
+                    xml_save_order_string = xml_save_order.encode('utf-8')
+                    response_save_order = session.request(method='POST', url=ip_string_2, data=xml_save_order_string,
+                                                          auth=('admin', '1'), verify=False)
+                    # Перекодируем response_save_order в нужную нам кодировку (кириллица поломана)
+                    response_save_order.encoding = 'UTF-8'
+                    # Уже перекодированные данные выводим с помощью метода .text
+                    self.text_field_tab_2.insert(1.0, ('# ' + response_save_order.text + "\n" + "=" * 70 + "\n"))
+                    with open('log.txt', 'a', encoding='UTF-8') as log:
+                        log.write(strftime(str("%H:%M:%S %Y-%m-%d") + ' SaveOrder request result' +
+                                           response_save_order.text + '\n'))
 
                 except OSError as e:
                     messagebox.showerror(title='Connection error', message=e)
@@ -478,9 +475,9 @@ class Visual:
         self.text_field_tab_2 = Text(self.frame_2, height=25, width=70, wrap=WORD, relief=SOLID)
         self.text_field_tab_2.place(x=170, y=70)
 
-        # Кнопка "Запросить меню"
+        # Кнопка "Запросить коды"
         '''См. кнопку "Код блюда"'''
-        self.button_request_menu = ttk.Button(self.frame_2, text='Запросить меню', command=order_menu).place(x=15,
+        self.button_request_menu = ttk.Button(self.frame_2, text='Запросить коды блюд', command=order_menu).place(x=15,
                                                                                                              y=327)
         # Кнопка "Создать"
         self.button_create = ttk.Button(self.frame_2, text='Создать', command=create).place(x=15, y=363)
