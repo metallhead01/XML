@@ -31,7 +31,7 @@ class Visual:
 
         # Настроим лог
         with open('log.txt', 'a') as log:
-            log.write('\n' + strftime(str("%H:%M:%S %Y-%m-%d") + ' Application started.' + '\n'))
+            log.write(strftime(str("%H:%M:%S %Y-%m-%d") + ' Application started.' + '\n'))
 
         root.title("XML Parser v.1.3.6")
 
