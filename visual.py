@@ -113,7 +113,7 @@ class Visual:
                     self.entry_xml_create_tab_2_arg4['values'] = idents
 
 
-                    return(idents,prices)
+                    # return(idents,prices)
 
                 except OSError as e:
                     # print(e)
@@ -276,9 +276,9 @@ class Visual:
                     '''Перебираем все ноды "Item" в прямой дочерней ноде "Dishes"'''
                     parsed_create_order = parsed_ident_nodes.attrib
                     visit_id = parsed_create_order.get('VisitID')
+
                     '''Запишем GUID заказа в поле "GUID заказа" третьей вкладки.
                     Для корректной вставки обрежим фигурные скобки из ответа в начале и в конце'''
-
                     a = parsed_create_order.get('guid')
                     xml_arg1_tab_3.set(a[1:-1])
                     xml_save_order = '<RK7Query><RK7CMD CMD="SaveOrder" deferred="1" dontcheckLicense="1">' \
@@ -466,13 +466,13 @@ class Visual:
         self.entry_xml_create_tab_2_arg3.place(x=15, y=205)
         # Код блюда
         self.label_xml_create_tab_2_arg4 = Label(self.frame_2, text='Код блюда').place(x=15, y=228)
-        self.entry_xml_create_tab_2_arg4 = ttk.Combobox(self.frame_2, textvariable=xml_arg3_tab_3,
+        self.entry_xml_create_tab_2_arg4 = ttk.Combobox(self.frame_2, textvariable=xml_arg4_tab_2,
                                                         width=17, state='readonly')
         self.entry_xml_create_tab_2_arg4.place(x=15, y=250)
 
         # Количество блюда
         self.label_xml_create_tab_2_arg5 = Label(self.frame_2, text='Количество блюд').place(x=15, y=272)
-        self.entry_xml_create_tab_2_arg5 = ttk.Entry(self.frame_2, width=20, textvariable=xml_arg4_tab_2)
+        self.entry_xml_create_tab_2_arg5 = ttk.Entry(self.frame_2, width=20, textvariable=xml_arg5_tab_2)
         self.entry_xml_create_tab_2_arg5.place(x=15, y=295)
 
         # Поле текста
