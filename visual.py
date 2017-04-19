@@ -198,10 +198,10 @@ class Visual:
                                 
                             self.text_field.insert(1.0, (str(i) + ". " +
                                 "Визит (ID) = " + visit.get('VisitID') + "\n" +
-                                "Завершен= " + visit.get(
-                                'Finished') + "\n" + "-" * 47 + "\n" +
+                                "Завершен= " + visit.get('Finished') + "\n" +
                                 "Количество гостей = " + visit.get(
-                                'GuestsCount') + "ID заказа = " + order.get(
+                                'GuestsCount') +  "\n" + "-" * 47 + "\n" +
+                                "ID заказа = " + order.get(
                                 'OrderID') + "\n" + "Имя заказа = " + order.get(
                                 'OrderName') + "\n" + "GUID = " + order.get(
                                 'guid') + "\n" "Стол (ID) = " + order.get(
@@ -277,15 +277,14 @@ class Visual:
 
                     '''Запишем GUID заказа в поле "GUID заказа" третьей вкладки.
                     Для корректной вставки обрежим фигурные скобки из ответа в начале и в конце'''
-                    a = parsed_create_order.get('guid')
-                    xml_arg1_tab_3.set(a[1:-1])
+                    xml_arg1_tab_3.set(parsed_create_order.get('guid'))
                     xml_save_order = '<RK7Query><RK7CMD CMD="SaveOrder" deferred="1" dontcheckLicense="1">' \
                                          '<Order visit="' + \
                                          str(visit_id) + '" orderIdent="256" /><Session><Station code="' + \
                                          str(self.entry_xml_create_tab_2_arg3.get()) + '" /><Dish id="' + \
                                          str(self.entry_xml_create_tab_2_arg4.get()) + '" quantity="' + \
-                                         str(self.entry_xml_create_tab_2_arg4.get()) + '"></Dish></Session></RK7CMD>' \
-                                                                                       '</RK7Query>'
+                                         str(self.entry_xml_create_tab_2_arg5.get() * 1000) + \
+                                     '"></Dish></Session></RK7CMD></RK7Query>'
 
                     xml_save_order_string = xml_save_order.encode('utf-8')
                     response_save_order = session.request(method='POST', url=ip_string_2, data=xml_save_order_string,
