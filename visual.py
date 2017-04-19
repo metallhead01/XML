@@ -181,49 +181,45 @@ class Visual:
                         log.write(strftime(str("%H:%M:%S %Y-%m-%d") + ' GetOrderList query result' + ' ' + response.text
                                   + '\n'))
 
-                    # print(response.text)
+
                     xmldoc = minidom.parseString(response.text)
                     xmldoc.normalize()
 
                     if a1 == "GetOrderList":
                         i = 1
-                        y = 1
-                        # Обратимся к тегу Order
                         self.text_field.delete(1.0, END)
-                        orders = xmldoc.getElementsByTagName("Order")
-                        # Обратимся к тегу Visit
-                        visits = xmldoc.getElementsByTagName("Visit")
-                        for visit in visits:
-                            self.text_field.insert(1.0, (
-                            str(i) + ". " + "Визит (ID) = " + visit.attributes.item(0).value + "\n" + "Завершен"
-                            " = " + visit.attributes.item(2).value + "\n" "Количество гостей = "
-                            + visit.attributes.item(3).value + "\n" + "-" * 47 + "\n"))
-                            i = i + 1
+                        parsed_order_nodes = ET.fromstring(response.content)
+                        for item in parsed_order_nodes.findall("./Visit"):
+                            visit = (item.attrib)
+                            for item_1 in parsed_order_nodes.findall("./Visit/Orders/Order"):
+                                order = (item_1.attrib)
+                                
+                                self.text_field.insert(1.0, (str(i) + ". " +
+                                    "Визит (ID) = " + visit.get('VisitID') + "\n" +
+                                    "Завершен= " + visit.get(
+                                    'Finished') + "\n" + "-" * 47 + "\n" +
+                                    "Количество гостей = " + visit.get(
+                                    'GuestsCount') + "ID заказа = " + order.get(
+                                    'OrderID') + "\n" + "Имя заказа = " + order.get(
+                                    'OrderName') + "\n" + "GUID = " + order.get(
+                                    'guid') + "\n" "Стол (ID) = " + order.get(
+                                    'TableID') + "\n" + "Стол (Код) = " + order.get(
+                                    'TableCode') + "\n" + "Категория Заказа (ID) = " + order.get(
+                                    'OrderCategID') + "\n" + "Категория заказа (Код) = " + order.get(
+                                    'OrderCategCode') + "\n" + "Тип Заказа (ID) = " + order.get(
+                                    'OrderTypeID') + "\n" + "Тип Заказа(Код) = " + order.get(
+                                    'OrderTypeCode') + "\n" + "Официант (ID) = " + order.get(
+                                    'WaiterID') + "\n" + "Официант (код) = " + order.get(
+                                    'WaiterCode') + "\n" + "Сумма заказа = " + order.get(
+                                    'OrderSum') + "\n" + "Сумма к оплате = " + order.get(
+                                    'ToPaySum') + "\n" + "PriceListSum = " + order.get(
+                                    'PriceListSum') + "\n" + "Всего блюд = " + order.get(
+                                    'TotalPieces') + "\n" + "Счет = " + order.get(
+                                    'Bill') + "\n" + "Открыт = " + order.get(
+                                    'CreateTime') + "\n" + "Завершен = " + order.get(
+                                    'Finished') + "\n" +"=" * 47 + "\n"))
+                                i += 1
 
-                        for order in orders:
-                            self.text_field.insert(1.0, (str(y) + ". " + "ID заказа = " +
-                                order.attributes.item(0).value + "\n" + "Имя заказа = " +
-                                order.attributes.item(1).value + "\n" + "GUID = " + order.attributes.item(
-                                5).value + "\n" "Стол (ID) = " + order.attributes.item(6).value + "\n"
-                                                    + "Стол (Код) = " + order.attributes.item(
-                                7).value + "\n" + "Категория Заказа (ID) = " + order.attributes.
-                                                    item(
-                                8).value + "\n" + "Категория заказа (Код) = " + order.attributes.item(
-                                9).value + "\n" + "Тип Заказа (ID)"
-                                                  " = " + order.attributes.item(
-                                10).value + "\n" + "Тип Заказа(Код) = " + order.attributes.item(11).value +
-                                                    "\n" + "Официант (ID) = " + order.attributes.item(
-                                12).value + "\n" + "Официант (код) = " + order.attributes
-                                                    .item(13).value + "\n" + "Сумма заказа = " + order.attributes.item(
-                                14).value + "\n" + "Сумма к оплате = "
-                                                    + order.attributes.item(
-                                15).value + "\n" + "PriceListSum = " + order.attributes.item(16).value + "\n" +
-                                                    "Всего блюд = " + order.attributes.item(
-                                17).value + "\n" + "Завершен = " + order.attributes.item(18).value
-                                                    + "\n" + "Счет = " + order.attributes.item(
-                                19).value + "\n" + "Открыт = " + order.attributes.item(20).value
-                                                    + "\n" + "-" * 47 + "\n"))
-                            y = y + 1
 
                     elif a1 == "GetWaiterList":
                         self.text_field.delete(1.0, END)
