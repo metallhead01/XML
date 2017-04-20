@@ -99,7 +99,6 @@ class Visual:
                         log.write(strftime(str("%H:%M:%S %Y-%m-%d") + ' GetOrderMenu query result' + ' ' + response.text
                                   + '\n'))
 
-                    # print(response.text)
                     '''С помощью The ElementTree XML API делаем парсинг ответа из строки'''
                     parsed_ident_nodes = ET.fromstring(response.content)
                     '''Перебираем все ноды "Item" в прямой дочерней ноде "Dishes"'''
@@ -189,13 +188,14 @@ class Visual:
                     if a1 == "GetOrderList":
                         i = 1
                         self.text_field.delete(1.0, END)
-                        parsed_order_nodes = ET.fromstring(response.content)
-                        for item in parsed_order_nodes.findall("./Visit"):
+                        parsed_visit_nodes = ET.fromstring(response.content)
+                        for item in parsed_visit_nodes.findall("./Visit"):
                             visit = (item.attrib)
+                            # В item ханится один визит из всех найденных нами визитов. С помощью конструции
+                            # item[0][0], где первый [0] - это первый подэлемент (Orders) прямой дочерней ноды,
+                            #                 второй [0] - это первый подэлемент (Order) подэлемента Orders.
+                            # В целом конструкция аналогична "./Visit/Orders/Order"
                             order = item[0][0].attrib
-                            #for item_1 in parsed_order_nodes.findall("./Visit/Orders/Order"):
-                                #order = (item_1.attrib)
-                                
                             self.text_field.insert(1.0, (str(i) + ". " +
                                 "Визит (ID) = " + visit.get('VisitID') + "\n" +
                                 "Завершен= " + visit.get('Finished') + "\n" +
