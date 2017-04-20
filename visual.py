@@ -21,8 +21,7 @@ from requests.packages.urllib3.exceptions import InsecureRequestWarning
 import json
 from xml.dom import minidom
 import xml.etree.ElementTree as ET
-from xml.dom.minidom import parse, Node
-from time import gmtime, strftime
+from time import strftime
 
 
 class Visual():
@@ -493,10 +492,10 @@ class Visual():
 
         # Кнопка "Запросить коллекции"
         '''См. кнопку "Код блюда"'''
-        self.button_request_menu = ttk.Button(self.frame_2, text='Запросить коллекции', command=collections_call).place\
-                                                                                                           (x=15, y=327)
+        self.button_request_menu = ttk.Button(self.root, text='Запросить коллекции', command=collections_call).place\
+                                                                                                           (x=590, y=66)
         # Кнопка "Создать"
-        self.button_create = ttk.Button(self.frame_2, text='Создать', command=create).place(x=15, y=363)
+        self.button_create = ttk.Button(self.frame_2, text='Создать', command=create).place(x=15, y=330)
 
         self.scrollbar_tab_2 = ttk.Scrollbar(self.frame_2, orient=VERTICAL, command=self.text_field_tab_2.yview)
         self.scrollbar_tab_2.pack(side=RIGHT, fill=Y)
