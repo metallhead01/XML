@@ -238,12 +238,32 @@ class Visual():
 
                     elif a1 == "GetWaiterList":
                         self.text_field.delete(1.0, END)
+                        parsed_waiter_nodes = ET.fromstring(response.content)
+                        for item in parsed_waiter_nodes.findall("./K7Reference/Items/Item"):
+                            attr_of_item_node = (item.attrib)
+                            #if attr_of_item_node.get('Status') == 'rsActive' and attr_of_item_node.get(
+                             #       'ActiveHierarchy') == 'true':
+                            item_ident = item.find('ItemIdent')
+                            code = item.find('Code')
+                            print(code)
+                            name = item.find('Name')
+                            print(name)
+                            print("Официант (ID) = " + item_ident + "\n" + "Официант (Код)= " +
+                                code + "\n" + "Официант (Имя)= " + name +  "-" * 47 + "\n")
+                            self.text_field.insert(1.0, (
+                                "Официант (ID) = " + item_ident + "\n" + "Официант (Код)= " +
+                                code + "\n" + "Официант (Имя)= " + name +  "-" * 47 + "\n"))
+
+                        # self.entry_xml_create_tab_2_arg3['values'] = collections_request.tab_2_fields_request('Cashes',
+                                                                                                           #   i, p)
+
+                        '''
                         waiters = xmldoc.getElementsByTagName("waiter")
                         for waiter in waiters:
                             self.text_field.insert(1.0, (
                             "Официант (ID) = " + waiter.attributes.item(0).value + "\n" + "Официант (Код)= " +
                             waiter.attributes.item(1).value + "\n" + "-" * 47 + "\n"))
-
+                        '''
                     elif a1 == "GetRefList":
                         self.text_field.delete(1.0, END)
                         references = xmldoc.getElementsByTagName("RK7Reference")
