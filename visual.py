@@ -205,48 +205,75 @@ class Visual():
                         parsed_order_nodes = ET.fromstring(response.content)
                         for item in parsed_order_nodes.findall("./Visit"):
                             visit = (item.attrib)
-                            order = item[0][0].attrib
-                            #for item_1 in parsed_order_nodes.findall("./Visit/Orders/Order"):
-                                #order = (item_1.attrib)
+                            order = parsed_order_nodes.findall("./Visit/Orders/Order")
+                            # order = item[0][0].attrib
+                            print(order)
+                            if visit.get('Finished') == '0':
 
-                            self.text_field.insert(1.0, (str(i) + ". " +
-                                "Визит (ID) = " + visit.get('VisitID') + "\n" +
-                                "Завершен= " + visit.get('Finished') + "\n" +
-                                "Количество гостей = " + visit.get(
-                                'GuestsCount') +  "\n" + "-" * 47 + "\n" +
-                                "ID заказа = " + order.get(
-                                'OrderID') + "\n" + "Имя заказа = " + order.get(
-                                'OrderName') + "\n" + "GUID = " + order.get(
-                                'guid') + "\n" "Стол (ID) = " + order.get(
-                                'TableID') + "\n" + "Стол (Код) = " + order.get(
-                                'TableCode') + "\n" + "Категория Заказа (ID) = " + order.get(
-                                'OrderCategID') + "\n" + "Категория заказа (Код) = " + order.get(
-                                'OrderCategCode') + "\n" + "Тип Заказа (ID) = " + order.get(
-                                'OrderTypeID') + "\n" + "Тип Заказа(Код) = " + order.get(
-                                'OrderTypeCode') + "\n" + "Официант (ID) = " + order.get(
-                                'WaiterID') + "\n" + "Официант (код) = " + order.get(
-                                'WaiterCode') + "\n" + "Сумма заказа = " + order.get(
-                                'OrderSum') + "\n" + "Сумма к оплате = " + order.get(
-                                'ToPaySum') + "\n" + "PriceListSum = " + order.get(
-                                'PriceListSum') + "\n" + "Всего блюд = " + order.get(
-                                'TotalPieces') + "\n" + "Счет = " + order.get(
-                                'Bill') + "\n" + "Открыт = " + order.get(
-                                'CreateTime') + "\n" + "Завершен = " + order.get(
-                                'Finished') + "\n" +"=" * 47 + "\n"))
-                            i += 1
+                                self.text_field.insert(1.0, (str(i) + ". " +
+                                    "Визит (ID) = " + visit.get('VisitID') + "\n" +
+                                    "Завершен= " + visit.get('Finished') + "\n" +
+                                    "Количество гостей = " + visit.get(
+                                    'GuestsCount') + "\n" + "-" * 47 + "\n" +
+                                    "ID заказа = " + order.get(
+                                    'OrderID') + "\n" + "Имя заказа = " + order.get(
+                                    'OrderName') + "\n" + "GUID = " + order.get(
+                                    'guid') + "\n" "Стол (ID) = " + order.get(
+                                    'TableID') + "\n" + "Стол (Код) = " + order.get(
+                                    'TableCode') + "\n" + "Категория Заказа (ID) = " + order.get(
+                                    'OrderCategID') + "\n" + "Категория заказа (Код) = " + order.get(
+                                    'OrderCategCode') + "\n" + "Тип Заказа (ID) = " + order.get(
+                                    'OrderTypeID') + "\n" + "Тип Заказа(Код) = " + order.get(
+                                    'OrderTypeCode') + "\n" + "Официант (ID) = " + order.get(
+                                    'WaiterID') + "\n" + "Официант (код) = " + order.get(
+                                    'WaiterCode') + "\n" + "Сумма заказа = " + order.get(
+                                    'OrderSum') + "\n" + "Сумма к оплате = " + order.get(
+                                    'ToPaySum') + "\n" + "PriceListSum = " + order.get(
+                                    'PriceListSum') + "\n" + "Всего блюд = " + order.get(
+                                    'TotalPieces') + "\n" + "Счет = " + order.get(
+                                    'Bill') + "\n" + "Открыт = " + order.get(
+                                    'CreateTime') + "\n" + "=" * 47 + "\n"))
 
+                            elif visit.get('Finished') == '1':
 
+                                self.text_field.insert(1.0, (str(i) + ". " +
+                                    "Визит (ID) = " + visit.get('VisitID') + "\n" +
+                                    "Завершен= " + visit.get('Finished') + "\n" +
+                                    "Количество гостей = " + visit.get(
+                                    'GuestsCount') + "\n" + "-" * 47 + "\n" +
+                                    "ID заказа = " + order.get(
+                                    'OrderID') + "\n" + "Имя заказа = " + order.get(
+                                    'OrderName') + "\n" + "GUID = " + order.get(
+                                    'guid') + "\n" "Стол (ID) = " + order.get(
+                                    'TableID') + "\n" + "Стол (Код) = " + order.get(
+                                    'TableCode') + "\n" + "Категория Заказа (ID) = " + order.get(
+                                    'OrderCategID') + "\n" + "Категория заказа (Код) = " + order.get(
+                                    'OrderCategCode') + "\n" + "Тип Заказа (ID) = " + order.get(
+                                    'OrderTypeID') + "\n" + "Тип Заказа(Код) = " + order.get(
+                                    'OrderTypeCode') + "\n" + "Официант (ID) = " + order.get(
+                                    'WaiterID') + "\n" + "Официант (код) = " + order.get(
+                                    'WaiterCode') + "\n" + "Сумма заказа = " + order.get(
+                                    'OrderSum') + "\n" + "Сумма к оплате = " + order.get(
+                                    'ToPaySum') + "\n" + "PriceListSum = " + order.get(
+                                    'PriceListSum') + "\n" + "Всего блюд = " + order.get(
+                                    'TotalPieces') + "\n" + "Счет = " + order.get(
+                                    'Bill') + "\n" + "Открыт = " + order.get(
+                                    'CreateTime') + "\n" + "Завершен = " + order.get(
+                                    'FinishTime') + "\n" + "=" * 47 + "\n"))
+                                i += 1
                     elif a1 == "GetWaiterList":
                         self.text_field.delete(1.0, END)
                         parsed_waiter_nodes = ET.fromstring(response.content)
                         for item in parsed_waiter_nodes.findall("./K7Reference/Items/Item"):
                             attr_of_item_node = (item.attrib)
+                            print(attr_of_item_node)
                             #if attr_of_item_node.get('Status') == 'rsActive' and attr_of_item_node.get(
                              #       'ActiveHierarchy') == 'true':
-                            item_ident = item.find('ItemIdent')
-                            code = item.find('Code')
+                            item_ident = item[0].attrib
+                            print(item_ident)
+                            code = item[6].attrib
                             print(code)
-                            name = item.find('Name')
+                            name = item[7].attrib
                             print(name)
                             print("Официант (ID) = " + item_ident + "\n" + "Официант (Код)= " +
                                 code + "\n" + "Официант (Имя)= " + name +  "-" * 47 + "\n")
