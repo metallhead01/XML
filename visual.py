@@ -28,7 +28,7 @@ from time import gmtime, strftime
 class Visual():
     def __init__(self, root):
         self.root = root
-        self.version = '1.3.6'
+        self.version = '1.3.7'
 
         # Настроим лог
         with open('log.txt', 'a') as log:
@@ -75,7 +75,7 @@ class Visual():
         session = requests.session()
 
 
-        def order_menu():
+        def collections_call():
             i = ip_add.get()
             p = port.get()
             idents = []
@@ -85,28 +85,26 @@ class Visual():
                 messagebox.showwarning(title='Error', message="Введите IP-адрес и порт!")
             else:
                 try:
-                    # Создадим первый экземпляр класса Request для парсинга станций и применим метод
-                    #  "tab_2_fields_request" из него.
-                    order_type = Request(root)
-                    # Вставим полученные от парсера значения в поле "Код станции"
-                    self.entry_xml_create_tab_2_arg1['values'] = order_type.tab_2_fields_request \
-                        ('UNCHANGEABLEORDERTYPES', i, p)
+                    # Создадим экземпляр класса Request для парсинга запросов и будем применять метод
+                    #  "tab_2_fields_request" для каждого нужного нам запроса.
+                    collections_request = Request(root)
+                    # Вставим полученные от парсера значения в поле "Тип заказа"
+                    self.entry_xml_create_tab_2_arg1['values'] = collections_request.tab_2_fields_request \
+                        ('UNCHANGEABLEORDERTYPES',i,p)
 
-                    # Создадим второй экземпляр класса Request для парсинга станций и применим метод
-                    #  "tab_2_fields_request" из него.
-                    tables = Request(root)
-                    # Вставим полученные от парсера значения в поле "Код станции"
-                    self.entry_xml_create_tab_2_arg2['values'] = tables.tab_2_fields_request('Tables', i, p)
+                    # Вставим полученные от парсера значения в поле "Код стола"
+                    self.entry_xml_create_tab_2_arg2['values'] = collections_request.tab_2_fields_request('Tables',i,p)
 
-                    # Создадим третий экземпляр класса Request для парсинга станций и применим метод
-                    # "tab_2_fields_request" из него.
-                    stations = Request(root)
                     # Вставим полученные от парсера значения в поле "Код станции"
-                    self.entry_xml_create_tab_2_arg3['values'] = stations.tab_2_fields_request('Cashes', i, p)
+                    self.entry_xml_create_tab_2_arg3['values'] = collections_request.tab_2_fields_request('Cashes',i,p)
+                    self.entry_xml_create_tab_3_arg3['values'] = collections_request.tab_2_fields_request('Cashes',i,p)
+                    self.entry_xml_create_tab_3_arg4['values'] = collections_request.tab_2_fields_request('CURRENCIES',
+                                                                                                                    i,p)
+
 
                     # Собираем строку для отправки запроса
                     xml_request_string = '<RK7Query><RK7CMD CMD="GetOrderMenu" StationCode="' + str(
-                        stations.tab_2_fields_request('Cashes', i, p)[0]) + '" DateTime="' + strftime(
+                        collections_request.tab_2_fields_request('Cashes', i, p)[0]) + '" DateTime="' + strftime(
                         "%Y-%m-%d %H:%M:%S") + '" /></RK7Query>'
                     ip_string = 'https://' + i + ":" + p + '/rk7api/v0/xmlinterface.xml'
                     # Убираем warnings об SSL (warnings выводятся даже при отключении SSL)
@@ -493,10 +491,10 @@ class Visual():
         self.text_field_tab_2 = Text(self.frame_2, height=25, width=70, wrap=WORD, relief=SOLID)
         self.text_field_tab_2.place(x=170, y=70)
 
-        # Кнопка "Запросить коды"
+        # Кнопка "Запросить коллекции"
         '''См. кнопку "Код блюда"'''
-        self.button_request_menu = ttk.Button(self.frame_2, text='Запросить коллекции', command=order_menu).place(x=15,
-                                                                                                                  y=327)
+        self.button_request_menu = ttk.Button(self.frame_2, text='Запросить коллекции', command=collections_call).place\
+                                                                                                           (x=15, y=327)
         # Кнопка "Создать"
         self.button_create = ttk.Button(self.frame_2, text='Создать', command=create).place(x=15, y=363)
 
@@ -516,13 +514,15 @@ class Visual():
         self.label_xml_create_tab_3_arg2 = Label(self.frame_3, text='Код кассира').place(x=15, y=111)
         self.entry_xml_create_tab_3_arg2 = ttk.Entry(self.frame_3, width=20, textvariable=xml_arg2_tab_3)
         self.entry_xml_create_tab_3_arg2.place(x=15, y=132)
-        # Код станции
+        # Код станции(Combobox)
         self.label_xml_create_tab_3_arg3 = Label(self.frame_3, text='Код станции').place(x=15, y=153)
-        self.entry_xml_create_tab_3_arg3 = ttk.Entry(self.frame_3, width=20, textvariable=xml_arg3_tab_3)
+        self.entry_xml_create_tab_3_arg3 = ttk.Combobox(self.frame_3, textvariable=xml_arg3_tab_3,
+                                                        width = 17, state = 'readonly')
         self.entry_xml_create_tab_3_arg3.place(x=15, y=174)
         # ID валюты
         self.label_xml_create_tab_3_arg4 = Label(self.frame_3, text='ID валюты').place(x=15, y=195)
-        self.entry_xml_create_tab_3_arg4 = ttk.Entry(self.frame_3, width=20, textvariable=xml_arg4_tab_3)
+        self.entry_xml_create_tab_3_arg4 = ttk.Combobox(self.frame_3, textvariable=xml_arg4_tab_3,
+                                                        width=17, state='readonly')
         self.entry_xml_create_tab_3_arg4.place(x=15, y=216)
         # Сумма
         self.label_xml_create_tab_3_arg5 = Label(self.frame_3, text='Сумма').place(x=15, y=237)
