@@ -25,15 +25,16 @@ from xml.dom.minidom import parse, Node
 from time import gmtime, strftime
 
 
-class Visual:
+class Visual():
     def __init__(self, root):
         self.root = root
+        self.version = '1.3.6'
 
         # Настроим лог
         with open('log.txt', 'a') as log:
-            log.write(strftime(str("%H:%M:%S %Y-%m-%d") + ' Application started.' + '\n'))
+            log.write(strftime(str("%H:%M:%S %Y-%m-%d") + ' Application started ' + 'version ' + self.version + '\n'))
 
-        root.title("XML Parser v.1.3.6")
+        root.title("XML Parser v." + self.version)
 
         '''Добавляем функцию для сборки. В ней две ветки - try: функция проверяет используется ли frozen-режим (режимо
         одного .exe или обычное выполнение скрипта. Если интерпритатор видит, что метод "_MEIPASS" отсутствует (а он 
@@ -73,6 +74,24 @@ class Visual:
         # alive connections).
         session = requests.session()
 
+        def tab_2_fields_request(self,string):
+            self.string = string
+            i = ip_add.get()
+            p = port.get()
+            # Основное тело запроса
+            xml_request_string = '<RK7Query><RK7CMD CMD="GetRefData" RefName = "' + string + '"/></RK7Query>'
+            ip_string = 'https://' + i + ":" + p + '/rk7api/v0/xmlinterface.xml'
+            requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+            response = requests.get(ip_string, data=xml_request_string, auth=('Admin', '1'), verify=False)
+            # print(response.content)
+            parsed_cashes_list = ET.fromstring(response.content)
+            l_ist = []
+            for item in parsed_cashes_list.findall("./RK7Reference/Items/Item"):
+                attr_of_item_node = (item.attrib)
+                if attr_of_item_node.get('Status') == 'rsActive' and attr_of_item_node.get('ActiveHierarchy') == 'true':
+                    l_ist.append(attr_of_item_node.get('Code'))
+            return(l_ist)
+
         def order_menu():
             i = ip_add.get()
             p = port.get()
@@ -81,11 +100,35 @@ class Visual:
             ''' Проверим, ввел ли ли пользователь ip и порт, если нет - выдадим ошибку'''
             if not i and not p:
                 messagebox.showwarning(title='Error', message="Введите IP-адрес и порт!")
-
             else:
-                '''Собираем строку запроса'''
-                # Основное тело запроса
-                xml_request_string = '<RK7Query><RK7CMD CMD="GetOrderMenu" StationCode="' + str(xml_arg3_tab_2.get())\
+                '''Собираем строку запроса для получения списка ID станций'''
+                xml_request_string = '<RK7Query><RK7CMD CMD="GetRefData" RefName = "Cashes"/></RK7Query>'
+                ip_string = 'https://' + i + ":" + p + '/rk7api/v0/xmlinterface.xml'
+                try:
+                    requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+                    response = requests.get(ip_string, data=xml_request_string, auth=('Admin', '1'), verify=False)
+                    # Подробности обработки в секции получения списка блюд
+                    parsed_cashes_list = ET.fromstring(response.content)
+                    cashes = []
+                    for item in parsed_cashes_list.findall("./RK7Reference/Items/Item"):
+                        attr_of_item_node = (item.attrib)
+                        # Распарсенный запрос с списком станций обработаем условием: станция должна быть активной
+                        # и неудаленной, только коды, удовлетворяющие этим запросам положим в список "cashes"
+                        if attr_of_item_node.get('Status') == 'rsActive' \
+                                and attr_of_item_node.get('ActiveHierarchy') == 'true':
+                            cashes.append(attr_of_item_node.get('Code'))
+                            self.entry_xml_create_tab_2_arg3['values'] = cashes
+
+                except OSError as e:
+                    messagebox.showerror(title='Connection error', message=e)
+                    with open('log.txt', 'a', encoding='UTF-8') as log:
+                        log.write(strftime(str("%H:%M:%S %Y-%m-%d") + str(e) + '\n'))
+
+                '''                                                    '''
+                '''Собираем строку запроса для получения списка ID блюд'''
+                '''                                                    '''
+                #
+                xml_request_string = '<RK7Query><RK7CMD CMD="GetOrderMenu" StationCode="' + str(cashes[0])\
                                      + '" DateTime="' + strftime("%Y-%m-%d %H:%M:%S") + '" /></RK7Query>'
                 ip_string = 'https://' + i + ":" + p + '/rk7api/v0/xmlinterface.xml'
                 try:
@@ -99,27 +142,25 @@ class Visual:
                         log.write(strftime(str("%H:%M:%S %Y-%m-%d") + ' GetOrderMenu query result' + ' ' + response.text
                                   + '\n'))
 
-                    # print(response.text)
-                    '''С помощью The ElementTree XML API делаем парсинг ответа из строки'''
+                    # С помощью The ElementTree XML API делаем парсинг ответа из строки
                     parsed_ident_nodes = ET.fromstring(response.content)
-                    '''Перебираем все ноды "Item" в прямой дочерней ноде "Dishes"'''
+                    # Перебираем все ноды "Item" в прямой дочерней ноде "Dishes"
                     for item in parsed_ident_nodes.findall("./Dishes/Item"):
-                        '''В переменную "attr_of_item_node" передаем значения всех атрибутов (2 штуки)'''
+                        # В переменную "attr_of_item_node" передаем значения всех атрибутов (2 штуки)
                         attr_of_item_node = (item.attrib)
-                        '''Раскладываем по спискам значения атрибутов'''
+                        # Раскладываем по спискам значения атрибутов
                         idents.append(attr_of_item_node.get('Ident'))
                         prices.append(attr_of_item_node.get('Prices'))
-                    '''Заполняем значения Combobox (см. кнопка "Запросить меню" во второй секции)'''
+                    # Заполняем значения Combobox (см. кнопка "Запросить меню" во второй секции)
                     self.entry_xml_create_tab_2_arg4['values'] = idents
-
-
-                    # return(idents,prices)
 
                 except OSError as e:
                     # print(e)
                     messagebox.showerror(title='Connection error', message=e)
                     with open('log.txt', 'a', encoding='UTF-8') as log:
                         log.write(strftime(str("%H:%M:%S %Y-%m-%d") + str(e) + '\n'))
+
+
 
 
         def open_file():
@@ -195,7 +236,7 @@ class Visual:
                             order = item[0][0].attrib
                             #for item_1 in parsed_order_nodes.findall("./Visit/Orders/Order"):
                                 #order = (item_1.attrib)
-                                
+
                             self.text_field.insert(1.0, (str(i) + ". " +
                                 "Визит (ID) = " + visit.get('VisitID') + "\n" +
                                 "Завершен= " + visit.get('Finished') + "\n" +
@@ -279,11 +320,11 @@ class Visual:
                     Для корректной вставки обрежим фигурные скобки из ответа в начале и в конце'''
                     xml_arg1_tab_3.set(parsed_create_order.get('guid'))
                     xml_save_order = '<RK7Query><RK7CMD CMD="SaveOrder" deferred="1" dontcheckLicense="1">' \
-                                         '<Order visit="' + \
-                                         str(visit_id) + '" orderIdent="256" /><Session><Station code="' + \
-                                         str(self.entry_xml_create_tab_2_arg3.get()) + '" /><Dish id="' + \
-                                         str(self.entry_xml_create_tab_2_arg4.get()) + '" quantity="' + \
-                                         str(self.entry_xml_create_tab_2_arg5.get() * 1000) + \
+                                     '<Order visit="' + \
+                                     str(visit_id) + '" orderIdent="256" /><Session><Station code="' + \
+                                     str(self.entry_xml_create_tab_2_arg3.get()) + '" /><Dish id="' + \
+                                     str(self.entry_xml_create_tab_2_arg4.get()) + '" quantity="' + \
+                                     str(self.entry_xml_create_tab_2_arg5.get() * 1000) + \
                                      '"></Dish></Session></RK7CMD></RK7Query>'
 
                     xml_save_order_string = xml_save_order.encode('utf-8')
@@ -459,9 +500,10 @@ class Visual:
         self.entry_xml_create_tab_2_arg2.place(x=15, y=163)
         # Код станции
         self.label_xml_create_tab_2_arg3 = Label(self.frame_2, text='Код станции').place(x=15, y=184)
-        self.entry_xml_create_tab_2_arg3 = ttk.Entry(self.frame_2, width=20, textvariable=xml_arg3_tab_2)
+        self.entry_xml_create_tab_2_arg3 = ttk.Combobox(self.frame_2, textvariable=xml_arg3_tab_2,
+                                                        width=17, state='readonly')
         self.entry_xml_create_tab_2_arg3.place(x=15, y=205)
-        # Код блюда
+        # Код блюда (Combobox)
         self.label_xml_create_tab_2_arg4 = Label(self.frame_2, text='Код блюда').place(x=15, y=228)
         self.entry_xml_create_tab_2_arg4 = ttk.Combobox(self.frame_2, textvariable=xml_arg4_tab_2,
                                                         width=17, state='readonly')
