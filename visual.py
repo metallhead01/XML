@@ -333,7 +333,7 @@ class Visual():
                         for reference in references:
                             self.text_field.insert(1.0, (
                             "RefName = " + reference.attributes.item(0).value + " " + "Count = " + reference.
-                            attributes.item(1).value + " " + "DataVersion = " + reference.attributes.item(
+                            attributes.item(1).value + " " + " DataVersion = " + reference.attributes.item(
                                 2).value + "\n" + "-" * 60 + "\n"))
 
                     else:
@@ -457,6 +457,7 @@ class Visual():
 
         ip_add = StringVar()
         port = StringVar()
+
 
         '''Создали строку меню'''
 
