@@ -39,7 +39,7 @@ class Visual():
         одного .exe или обычное выполнение скрипта. Если интерпритатор видит, что метод "_MEIPASS" отсутствует (а он 
         используется только во frozen-режиме), то он идет по второй ветке и выполняет код в обычном режиме)'''
         def resource_path(relative_path):
-            """ Get absolute path to resource, works for dev and for PyInstaller """
+            '''Get absolute path to resource, works for dev and for PyInstaller '''
             try:
             # PyInstaller creates a temp folder and stores path in _MEIPASS
                 base_path = sys._MEIPASS
@@ -162,10 +162,10 @@ class Visual():
         def request():
             # Получаем аргументы запроса
             a1 = self.entry_xml_request_arg1.get()
-            a2 = xml_arg2.get()
-            a3 = xml_arg3.get()
-            a4 = xml_arg4.get()
-            a5 = xml_arg5.get()
+            # a2 = xml_arg2.get()
+            # a3 = xml_arg3.get()
+            # a4 = xml_arg4.get()
+            # a5 = xml_arg5.get()
 
             i = ip_add.get()
             p = port.get()
@@ -177,10 +177,10 @@ class Visual():
             else:
                 '''Собираем строку запроса'''
                 # Основное тело запроса
-                xml_request_string = '<?xml version="1.0" encoding="UTF-8"?><RK7Query> <RK7CMD CMD="' + str(
+                xml_request_string = '<?xml version="1.0"?><RK7Query> <RK7CMD CMD="' + str(
                     a1) + '" /></RK7Query>'
                 ip_string = 'https://' + i + ":" + p + '/rk7api/v0/xmlinterface.xml'
-
+                xml_unicode_request_string = xml_request_string.encode('utf-8')
                 try:
                     # Убираем warnings об SSL (warnings выводятся даже при отключении SSL)
                     requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
@@ -188,79 +188,133 @@ class Visual():
                     # Старый запрос без поддержки keep-alive
                     # response = requests.get(ip_string, data=a, auth=('admin', '1'),verify=False)
                     # Запрос с выключенным SSL
-                    response = session.request(method='GET', url=ip_string, data=xml_request_string, auth=(id.get(),
-                                                password.get()), verify=False)
+                    response = session.request(method='GET', url=ip_string, data=xml_unicode_request_string, auth=
+                    (id.get(), password.get()), verify=False)
 
                     with open('log.txt', 'a', encoding='UTF-8') as log:
-                        log.write(strftime(str("%H:%M:%S %Y-%m-%d") + ' GetOrderList query result' + ' ' + response.text
-                                  + '\n'))
+                        log.write(
+                            strftime(
+                                str("%H:%M:%S %Y-%m-%d") + ' GetOrderList query result' + ' ' + str(response.content)
+                                + '\n'))
 
-
-                    xmldoc = minidom.parseString(response.text)
+                    xmldoc = minidom.parseString(response.content)
                     xmldoc.normalize()
 
                     if a1 == "GetOrderList":
-                        i = 1
+                        n = 1
+
                         self.text_field.delete(1.0, END)
                         parsed_order_nodes = ET.fromstring(response.content)
                         for item in parsed_order_nodes.findall("./Visit"):
-                            visit = (item.attrib)
-                            order = parsed_order_nodes.findall("./Visit/Orders/Order")
-                            # order = item[0][0].attrib
-                            print(order)
-                            if visit.get('Finished') == '0':
+                            visit = item.attrib
+                            if item[0].tag == "Guests":
+                                order = item[1][0].attrib
+                                if visit.get('Finished') == '0':
+                                    self.text_field.insert(1.0, (str(n) + ". " + "Визит (ID) = " + visit.get(
+                                        'VisitID') + "\n" + "Завершен= " + visit.get(
+                                        'Finished') + "\n" + "Количество гостей = " + visit.get(
+                                        'GuestsCount') + "\n" + "ID заказа = " + order.get(
+                                        'OrderID') + "\n" + "Имя заказа = " + order.get(
+                                        'OrderName') + "\n" + "GUID = " + order.get(
+                                        'guid') + "\n" "Стол (ID) = " + order.get(
+                                        'TableID') + "\n" + "Стол (Код) = " + order.get(
+                                        'TableCode') + "\n" + "Категория Заказа (ID) = " + order.get(
+                                        'OrderCategID') + "\n" + "Категория заказа (Код) = " + order.get(
+                                        'OrderCategCode') + "\n" + "Тип Заказа (ID) = " + order.get(
+                                        'OrderTypeID') + "\n" + "Тип Заказа(Код) = " + order.get(
+                                        'OrderTypeCode') + "\n" + "Официант (ID) = " + order.get(
+                                        'WaiterID') + "\n" + "Официант (код) = " + order.get(
+                                        'WaiterCode') + "\n" + "Сумма заказа = " + order.get(
+                                        'OrderSum') + "\n" + "Сумма к оплате = " + order.get(
+                                        'ToPaySum') + "\n" + "PriceListSum = " + order.get(
+                                        'PriceListSum') + "\n" + "Всего блюд = " + order.get(
+                                        'TotalPieces') + "\n" + "Счет = " + order.get(
+                                        'Bill') + "\n" + "Открыт = " + order.get(
+                                        'CreateTime') + "\n" + "=" * 47 + "\n"))
+                                    n += 1
 
-                                self.text_field.insert(1.0, (str(i) + ". " +
-                                    "Визит (ID) = " + visit.get('VisitID') + "\n" +
-                                    "Завершен= " + visit.get('Finished') + "\n" +
-                                    "Количество гостей = " + visit.get(
-                                    'GuestsCount') + "\n" + "-" * 47 + "\n" +
-                                    "ID заказа = " + order.get(
-                                    'OrderID') + "\n" + "Имя заказа = " + order.get(
-                                    'OrderName') + "\n" + "GUID = " + order.get(
-                                    'guid') + "\n" "Стол (ID) = " + order.get(
-                                    'TableID') + "\n" + "Стол (Код) = " + order.get(
-                                    'TableCode') + "\n" + "Категория Заказа (ID) = " + order.get(
-                                    'OrderCategID') + "\n" + "Категория заказа (Код) = " + order.get(
-                                    'OrderCategCode') + "\n" + "Тип Заказа (ID) = " + order.get(
-                                    'OrderTypeID') + "\n" + "Тип Заказа(Код) = " + order.get(
-                                    'OrderTypeCode') + "\n" + "Официант (ID) = " + order.get(
-                                    'WaiterID') + "\n" + "Официант (код) = " + order.get(
-                                    'WaiterCode') + "\n" + "Сумма заказа = " + order.get(
-                                    'OrderSum') + "\n" + "Сумма к оплате = " + order.get(
-                                    'ToPaySum') + "\n" + "PriceListSum = " + order.get(
-                                    'PriceListSum') + "\n" + "Всего блюд = " + order.get(
-                                    'TotalPieces') + "\n" + "Счет = " + order.get(
-                                    'Bill') + "\n" + "Открыт = " + order.get(
-                                    'CreateTime') + "\n" + "=" * 47 + "\n"))
+                                elif visit.get('Finished') == '1':
 
-                            elif visit.get('Finished') == '1':
+                                    self.text_field.insert(1.0, (str(n) + ". " +
+                                        "Визит (ID) = " + visit.get('VisitID') + "\n" +
+                                        "Завершен= " + visit.get('Finished') + "\n" +
+                                        "Количество гостей = " + visit.get(
+                                        'GuestsCount') + "\n" + "-" * 47 + "\n" +
+                                        "ID заказа = " + order.get(
+                                        'OrderID') + "\n" + "Имя заказа = " + order.get(
+                                        'OrderName') + "\n" + "GUID = " + order.get(
+                                        'guid') + "\n" "Стол (ID) = " + order.get(
+                                        'TableID') + "\n" + "Стол (Код) = " + order.get(
+                                        'TableCode') + "\n" + "Категория Заказа (ID) = " + order.get(
+                                        'OrderCategID') + "\n" + "Категория заказа (Код) = " + order.get(
+                                        'OrderCategCode') + "\n" + "Тип Заказа (ID) = " + order.get(
+                                        'OrderTypeID') + "\n" + "Тип Заказа(Код) = " + order.get(
+                                        'OrderTypeCode') + "\n" + "Официант (ID) = " + order.get(
+                                        'WaiterID') + "\n" + "Официант (код) = " + order.get(
+                                        'WaiterCode') + "\n" + "Сумма заказа = " + order.get(
+                                        'OrderSum') + "\n" + "Сумма к оплате = " + order.get(
+                                        'ToPaySum') + "\n" + "PriceListSum = " + order.get(
+                                        'PriceListSum') + "\n" + "Всего блюд = " + order.get(
+                                        'TotalPieces') + "\n" + "Счет = " + order.get(
+                                        'Bill') + "\n" + "Открыт = " + order.get(
+                                        'CreateTime') + "\n" + "Завершен = " + order.get(
+                                        'FinishTime') + "\n" + "=" * 47 + "\n"))
+                                    n += 1
 
-                                self.text_field.insert(1.0, (str(i) + ". " +
-                                    "Визит (ID) = " + visit.get('VisitID') + "\n" +
-                                    "Завершен= " + visit.get('Finished') + "\n" +
-                                    "Количество гостей = " + visit.get(
-                                    'GuestsCount') + "\n" + "-" * 47 + "\n" +
-                                    "ID заказа = " + order.get(
-                                    'OrderID') + "\n" + "Имя заказа = " + order.get(
-                                    'OrderName') + "\n" + "GUID = " + order.get(
-                                    'guid') + "\n" "Стол (ID) = " + order.get(
-                                    'TableID') + "\n" + "Стол (Код) = " + order.get(
-                                    'TableCode') + "\n" + "Категория Заказа (ID) = " + order.get(
-                                    'OrderCategID') + "\n" + "Категория заказа (Код) = " + order.get(
-                                    'OrderCategCode') + "\n" + "Тип Заказа (ID) = " + order.get(
-                                    'OrderTypeID') + "\n" + "Тип Заказа(Код) = " + order.get(
-                                    'OrderTypeCode') + "\n" + "Официант (ID) = " + order.get(
-                                    'WaiterID') + "\n" + "Официант (код) = " + order.get(
-                                    'WaiterCode') + "\n" + "Сумма заказа = " + order.get(
-                                    'OrderSum') + "\n" + "Сумма к оплате = " + order.get(
-                                    'ToPaySum') + "\n" + "PriceListSum = " + order.get(
-                                    'PriceListSum') + "\n" + "Всего блюд = " + order.get(
-                                    'TotalPieces') + "\n" + "Счет = " + order.get(
-                                    'Bill') + "\n" + "Открыт = " + order.get(
-                                    'CreateTime') + "\n" + "Завершен = " + order.get(
-                                    'FinishTime') + "\n" + "=" * 47 + "\n"))
-                                i += 1
+                            elif item[0].tag == "Orders":
+                                order = item[0][0].attrib
+                                if visit.get('Finished') == '0':
+                                    self.text_field.insert(1.0, (str(n) + ". " + "Визит (ID) = " + visit.get(
+                                        'VisitID') + "\n" + "Завершен= " + visit.get(
+                                        'Finished') + "\n" + "Количество гостей = " + visit.get(
+                                        'GuestsCount') + "\n" + "ID заказа = " + order.get(
+                                        'OrderID') + "\n" + "Имя заказа = " + order.get(
+                                        'OrderName') + "\n" + "GUID = " + order.get(
+                                        'guid') + "\n" "Стол (ID) = " + order.get(
+                                        'TableID') + "\n" + "Стол (Код) = " + order.get(
+                                        'TableCode') + "\n" + "Категория Заказа (ID) = " + order.get(
+                                        'OrderCategID') + "\n" + "Категория заказа (Код) = " + order.get(
+                                        'OrderCategCode') + "\n" + "Тип Заказа (ID) = " + order.get(
+                                        'OrderTypeID') + "\n" + "Тип Заказа(Код) = " + order.get(
+                                        'OrderTypeCode') + "\n" + "Официант (ID) = " + order.get(
+                                        'WaiterID') + "\n" + "Официант (код) = " + order.get(
+                                        'WaiterCode') + "\n" + "Сумма заказа = " + order.get(
+                                        'OrderSum') + "\n" + "Сумма к оплате = " + order.get(
+                                        'ToPaySum') + "\n" + "PriceListSum = " + order.get(
+                                        'PriceListSum') + "\n" + "Всего блюд = " + order.get(
+                                        'TotalPieces') + "\n" + "Счет = " + order.get(
+                                        'Bill') + "\n" + "Открыт = " + order.get(
+                                        'CreateTime') + "\n" + "=" * 47 + "\n"))
+                                    n += 1
+
+                                elif visit.get('Finished') == '1':
+                                    self.text_field.insert(1.0, (str(n) + ". " +
+                                        "Визит (ID) = " + visit.get('VisitID') + "\n" +
+                                        "Завершен= " + visit.get('Finished') + "\n" +
+                                        "Количество гостей = " + visit.get(
+                                        'GuestsCount') + "\n" + "-" * 47 + "\n" +
+                                        "ID заказа = " + order.get(
+                                        'OrderID') + "\n" + "Имя заказа = " + order.get(
+                                        'OrderName') + "\n" + "GUID = " + order.get(
+                                        'guid') + "\n" "Стол (ID) = " + order.get(
+                                        'TableID') + "\n" + "Стол (Код) = " + order.get(
+                                        'TableCode') + "\n" + "Категория Заказа (ID) = " + order.get(
+                                        'OrderCategID') + "\n" + "Категория заказа (Код) = " + order.get(
+                                        'OrderCategCode') + "\n" + "Тип Заказа (ID) = " + order.get(
+                                        'OrderTypeID') + "\n" + "Тип Заказа(Код) = " + order.get(
+                                        'OrderTypeCode') + "\n" + "Официант (ID) = " + order.get(
+                                        'WaiterID') + "\n" + "Официант (код) = " + order.get(
+                                        'WaiterCode') + "\n" + "Сумма заказа = " + order.get(
+                                        'OrderSum') + "\n" + "Сумма к оплате = " + order.get(
+                                        'ToPaySum') + "\n" + "PriceListSum = " + order.get(
+                                        'PriceListSum') + "\n" + "Всего блюд = " + order.get(
+                                        'TotalPieces') + "\n" + "Счет = " + order.get(
+                                        'Bill') + "\n" + "Открыт = " + order.get(
+                                        'CreateTime') + "\n" + "Завершен = " + order.get(
+                                        'FinishTime') + "\n" + "=" * 47 + "\n"))
+                                    n += 1
+
+
                     elif a1 == "GetWaiterList":
                         self.text_field.delete(1.0, END)
                         parsed_waiter_nodes = ET.fromstring(response.content)
@@ -354,7 +408,7 @@ class Visual():
                     self.text_field_tab_2.insert(1.0, ('# ' + response_save_order.text + "\n" + "=" * 70 + "\n"))
                     with open('log.txt', 'a', encoding='UTF-8') as log:
                         log.write(strftime(str("%H:%M:%S %Y-%m-%d") + ' SaveOrder request result' +
-                                           response_save_order.text + '\n'))
+                                           str(response_save_order.content) + '\n'))
 
                 except OSError as e:
                     messagebox.showerror(title='Connection error', message=e)
@@ -368,7 +422,8 @@ class Visual():
                              str(self.entry_xml_create_tab_3_arg3.get()) + '"/><Payment id="' + \
                              str(self.entry_xml_create_tab_3_arg4.get()) + '" amount="' + \
                              str(self.entry_xml_create_tab_3_arg5.get()) + '"/></RK7CMD></RK7Query>'
-            print(xml_pay_string)
+            xml_pay_order_string = xml_pay_string.encode('utf-8')
+            # print(xml_pay_string)
             i_3 = ip_add.get()
             p_3 = port.get()
             ''' Проверим, ввел ли ли пользователь ip и порт, если нет - выдадим ошибку'''
@@ -379,7 +434,7 @@ class Visual():
                 ip_string_3 = 'https://' + i_3 + ":" + p_3 + '/rk7api/v0/xmlinterface.xml'
                 try:
                     requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
-                    response_pay_order = session.request(method='POST', url=ip_string_3, data=xml_pay_string,
+                    response_pay_order = session.request(method='POST', url=ip_string_3, data=xml_pay_order_string,
                     auth=(id.get(), password.get()), verify=False)
 
                     xmldoc = minidom.parseString(response_pay_order.text)
