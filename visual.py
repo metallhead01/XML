@@ -458,6 +458,7 @@ class Visual():
         ip_add = StringVar()
         port = StringVar()
 
+
         '''Создали строку меню'''
 
         # Выключили старый стиль меню
