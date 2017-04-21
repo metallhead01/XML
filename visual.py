@@ -27,7 +27,7 @@ from time import strftime
 class Visual():
     def __init__(self, root):
         self.root = root
-        self.version = '1.3.7'
+        self.version = '1.3.8'
 
         # Настроим лог
         with open('log.txt', 'a') as log:
@@ -47,6 +47,7 @@ class Visual():
                 base_path = os.path.abspath(".")
             return os.path.join(base_path, relative_path)
 
+        GetWaiterList = 'GetRefData" RefName = "EMPLOYEES'
         '''Задаем переменную для обработки пути с картинкой'''
         icon = resource_path(r'C:\GitHub\XML\images\7.ico')
         root.iconbitmap(icon)
@@ -202,7 +203,6 @@ class Visual():
 
                     if a1 == "GetOrderList":
                         n = 1
-
                         self.text_field.delete(1.0, END)
                         parsed_order_nodes = ET.fromstring(response.content)
                         for item in parsed_order_nodes.findall("./Visit"):
@@ -213,7 +213,7 @@ class Visual():
                                     self.text_field.insert(1.0, (str(n) + ". " + "Визит (ID) = " + visit.get(
                                         'VisitID') + "\n" + "Завершен= " + visit.get(
                                         'Finished') + "\n" + "Количество гостей = " + visit.get(
-                                        'GuestsCount') + "\n" + "ID заказа = " + order.get(
+                                        'GuestsCount')  + "\n" + "-" * 47 + "\n" + "ID заказа = " + order.get(
                                         'OrderID') + "\n" + "Имя заказа = " + order.get(
                                         'OrderName') + "\n" + "GUID = " + order.get(
                                         'guid') + "\n" "Стол (ID) = " + order.get(
@@ -233,7 +233,7 @@ class Visual():
                                         'CreateTime') + "\n" + "=" * 47 + "\n"))
                                     n += 1
 
-                                elif visit.get('Finished') == '1':
+                                else:
 
                                     self.text_field.insert(1.0, (str(n) + ". " +
                                         "Визит (ID) = " + visit.get('VisitID') + "\n" +
@@ -267,7 +267,7 @@ class Visual():
                                     self.text_field.insert(1.0, (str(n) + ". " + "Визит (ID) = " + visit.get(
                                         'VisitID') + "\n" + "Завершен= " + visit.get(
                                         'Finished') + "\n" + "Количество гостей = " + visit.get(
-                                        'GuestsCount') + "\n" + "ID заказа = " + order.get(
+                                        'GuestsCount')  + "\n" + "-" * 47 + "\n" + "ID заказа = " + order.get(
                                         'OrderID') + "\n" + "Имя заказа = " + order.get(
                                         'OrderName') + "\n" + "GUID = " + order.get(
                                         'guid') + "\n" "Стол (ID) = " + order.get(
@@ -287,7 +287,7 @@ class Visual():
                                         'CreateTime') + "\n" + "=" * 47 + "\n"))
                                     n += 1
 
-                                elif visit.get('Finished') == '1':
+                                else:
                                     self.text_field.insert(1.0, (str(n) + ". " +
                                         "Визит (ID) = " + visit.get('VisitID') + "\n" +
                                         "Завершен= " + visit.get('Finished') + "\n" +
@@ -315,36 +315,18 @@ class Visual():
                                     n += 1
 
 
-                    elif a1 == "GetWaiterList":
+                    elif a1 == 'GetRefData" RefName = "EMPLOYEES':
                         self.text_field.delete(1.0, END)
                         parsed_waiter_nodes = ET.fromstring(response.content)
-                        for item in parsed_waiter_nodes.findall("./K7Reference/Items/Item"):
-                            attr_of_item_node = (item.attrib)
-                            print(attr_of_item_node)
-                            #if attr_of_item_node.get('Status') == 'rsActive' and attr_of_item_node.get(
-                             #       'ActiveHierarchy') == 'true':
-                            item_ident = item[0].attrib
-                            print(item_ident)
-                            code = item[6].attrib
-                            print(code)
-                            name = item[7].attrib
-                            print(name)
-                            print("Официант (ID) = " + item_ident + "\n" + "Официант (Код)= " +
-                                code + "\n" + "Официант (Имя)= " + name +  "-" * 47 + "\n")
-                            self.text_field.insert(1.0, (
-                                "Официант (ID) = " + item_ident + "\n" + "Официант (Код)= " +
-                                code + "\n" + "Официант (Имя)= " + name +  "-" * 47 + "\n"))
+                        for item in parsed_waiter_nodes.findall("./RK7Reference/Items/Item"):
+                            waiter = (item.attrib)
+                            if waiter.get('Status') == 'rsActive' and waiter.get(
+                                   'ActiveHierarchy') == 'true':
+                                self.text_field.insert(1.0, ("Официант (Имя)= " + waiter.get(
+                                    'Name') + "\n" + "Официант (Код)= " + waiter.get(
+                                    'Code') + "\n" + "Официант (ID) = " + waiter.get(
+                                    'Ident') + "\n" + "-" * 47 + "\n"))
 
-                        # self.entry_xml_create_tab_2_arg3['values'] = collections_request.tab_2_fields_request('Cashes',
-                                                                                                           #   i, p)
-
-                        '''
-                        waiters = xmldoc.getElementsByTagName("waiter")
-                        for waiter in waiters:
-                            self.text_field.insert(1.0, (
-                            "Официант (ID) = " + waiter.attributes.item(0).value + "\n" + "Официант (Код)= " +
-                            waiter.attributes.item(1).value + "\n" + "-" * 47 + "\n"))
-                        '''
                     elif a1 == "GetRefList":
                         self.text_field.delete(1.0, END)
                         references = xmldoc.getElementsByTagName("RK7Reference")
@@ -514,7 +496,7 @@ class Visual():
 
         '''Первая вкладка'''
 
-        self.entry_xml_request_arg1 = ttk.Combobox(self.frame_1, values=['GetOrderList', 'GetWaiterList', 'GetRefList'],
+        self.entry_xml_request_arg1 = ttk.Combobox(self.frame_1, values=['GetOrderList', GetWaiterList, 'GetRefList'],
                                                                          width=17, state='readonly')
         # Поле IP & port
         self.ip_label = Label(self.frame_1, text='IP-Address').place(x=25, y=8)
