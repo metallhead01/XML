@@ -70,7 +70,7 @@ class Visual():
         root.geometry('%dx%d+%d+%d' % (w, h, x, y))
         root.bind('<Escape>', lambda e: root.destroy())
 
-        # Используем установку сессий для keep-alive подключений вместо единомоментных выззовов (Use session for keep-
+        # Используем установку сессий для keep-alive подключений вместо единомоментных вызовов (Use session for keep-
         # alive connections).
         session = requests.session()
 
@@ -163,10 +163,6 @@ class Visual():
         def request():
             # Получаем аргументы запроса
             a1 = self.entry_xml_request_arg1.get()
-            # a2 = xml_arg2.get()
-            # a3 = xml_arg3.get()
-            # a4 = xml_arg4.get()
-            # a5 = xml_arg5.get()
 
             i = ip_add.get()
             p = port.get()
