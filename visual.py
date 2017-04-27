@@ -49,7 +49,7 @@ class Visual():
 
         GetWaiterList = 'GetRefData" RefName = "EMPLOYEES'
         '''Задаем переменную для обработки пути с картинкой'''
-        icon = resource_path(r'C:\GitHub\XML\images\7.ico')
+        icon = resource_path(r'images\7.ico')
         root.iconbitmap(icon)
 
         '''Зададим размер и положение экрана в зависимости от размера экрана пользователя'''
@@ -233,7 +233,7 @@ class Visual():
                                         'CreateTime') + "\n" + "=" * 47 + "\n"))
                                     n += 1
 
-                                else:
+                                elif visit.get('Finished') == '1':
 
                                     self.text_field.insert(1.0, (str(n) + ". " +
                                         "Визит (ID) = " + visit.get('VisitID') + "\n" +
@@ -287,7 +287,7 @@ class Visual():
                                         'CreateTime') + "\n" + "=" * 47 + "\n"))
                                     n += 1
 
-                                else:
+                                elif visit.get('Finished') == '1':
                                     self.text_field.insert(1.0, (str(n) + ". " +
                                         "Визит (ID) = " + visit.get('VisitID') + "\n" +
                                         "Завершен= " + visit.get('Finished') + "\n" +
