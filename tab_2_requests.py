@@ -1,10 +1,9 @@
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
-import json
-from xml.dom import minidom
 import xml.etree.ElementTree as ET
-from time import gmtime, strftime
-class Request():
+
+
+class Request:
     def __init__(self, root):
         self.root = root
 
@@ -24,5 +23,4 @@ class Request():
             attr_of_item_node = (item.attrib)
             if attr_of_item_node.get('Status') == 'rsActive' and attr_of_item_node.get('ActiveHierarchy') == 'true':
                 l_ist.append(attr_of_item_node.get('Code'))
-
         return l_ist

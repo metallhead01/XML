@@ -22,6 +22,7 @@ import json
 from xml.dom import minidom
 import xml.etree.ElementTree as ET
 from time import strftime
+from custom_functions import *
 
 
 class Visual():
@@ -73,7 +74,6 @@ class Visual():
         # Используем установку сессий для keep-alive подключений вместо единомоментных вызовов (Use session for keep-
         # alive connections).
         session = requests.session()
-
 
         def collections_call():
             i = ip_add.get()
@@ -129,11 +129,10 @@ class Visual():
                     # Заполняем значения Combobox (см. кнопка "Запросить меню" во второй секции)
                     self.entry_xml_create_tab_2_arg4['values'] = idents
 
-                except OSError as e:
-                    # print(e)
-                    messagebox.showerror(title='Connection error', message=e)
-                    with open('log.txt', 'a', encoding='UTF-8') as log:
-                        log.write(strftime(str("%H:%M:%S %Y-%m-%d") + str(e) + '\n'))
+                except requests.exceptions.ConnectionError as e:
+                    # Cоздадим объект для вывода ошибки в лог
+                    error_log = CustomFunctions(root)
+                    error_log.os_error_log(e)
 
 
         def open_file():
@@ -188,11 +187,11 @@ class Visual():
                     response = session.request(method='GET', url=ip_string, data=xml_unicode_request_string, auth=
                     (id.get(), password.get()), verify=False)
 
-                    with open('log.txt', 'a', encoding='UTF-8') as log:
-                        log.write(
-                            strftime(
-                                str("%H:%M:%S %Y-%m-%d") + ' GetOrderList query result' + ' ' + str(response.content)
-                                + '\n'))
+                    # Создаем объект класса CustomFunctions. Будем использовать для вывода результатов ответа в лог.
+                    request_log = CustomFunctions(root)
+                    # Для вывода ответа в файл лога применим метод класса CustomFunctions - "log_writing". Аргументом
+                    # будет ответ от сервера "response".
+                    request_log.log_writing(response)
 
                     xmldoc = minidom.parseString(response.content)
                     xmldoc.normalize()
