@@ -39,10 +39,11 @@ class Visual():
         '''Добавляем функцию для сборки. В ней две ветки - try: функция проверяет используется ли frozen-режим (режимо
         одного .exe или обычное выполнение скрипта. Если интерпритатор видит, что метод "_MEIPASS" отсутствует (а он 
         используется только во frozen-режиме), то он идет по второй ветке и выполняет код в обычном режиме)'''
+
         def resource_path(relative_path):
             '''Get absolute path to resource, works for dev and for PyInstaller '''
             try:
-            # PyInstaller creates a temp folder and stores path in _MEIPASS
+                # PyInstaller creates a temp folder and stores path in _MEIPASS
                 base_path = sys._MEIPASS
             except Exception:
                 base_path = os.path.abspath(".")
@@ -54,7 +55,7 @@ class Visual():
         root.iconbitmap(icon)
 
         '''Зададим размер и положение экрана в зависимости от размера экрана пользователя'''
-        #root.geometry("900x700+500+600")
+        # root.geometry("900x700+500+600")
         w = 800  # width for the Tk root
         h = 600  # height for the Tk root
 
@@ -90,17 +91,19 @@ class Visual():
                     collections_request = Request(root)
                     # Вставим полученные от парсера значения в поле "Тип заказа"
                     self.entry_xml_create_tab_2_arg1['values'] = collections_request.tab_2_fields_request \
-                        ('UNCHANGEABLEORDERTYPES',i,p)
+                        ('UNCHANGEABLEORDERTYPES', i, p)
 
                     # Вставим полученные от парсера значения в поле "Код стола"
-                    self.entry_xml_create_tab_2_arg2['values'] = collections_request.tab_2_fields_request('Tables',i,p)
+                    self.entry_xml_create_tab_2_arg2['values'] = collections_request.tab_2_fields_request('Tables', i,
+                                                                                                          p)
 
                     # Вставим полученные от парсера значения в поле "Код станции"
-                    self.entry_xml_create_tab_2_arg3['values'] = collections_request.tab_2_fields_request('Cashes',i,p)
-                    self.entry_xml_create_tab_3_arg3['values'] = collections_request.tab_2_fields_request('Cashes',i,p)
+                    self.entry_xml_create_tab_2_arg3['values'] = collections_request.tab_2_fields_request('Cashes', i,
+                                                                                                          p)
+                    self.entry_xml_create_tab_3_arg3['values'] = collections_request.tab_2_fields_request('Cashes', i,
+                                                                                                          p)
                     self.entry_xml_create_tab_3_arg4['values'] = collections_request.tab_2_fields_request('CURRENCIES',
-                                                                                                                    i,p)
-
+                                                                                                          i, p)
 
                     # Собираем строку для отправки запроса
                     xml_request_string = '<RK7Query><RK7CMD CMD="GetOrderMenu" StationCode="' + str(
@@ -111,11 +114,12 @@ class Visual():
                     requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
                     # Запрос с выключенным SSL
                     response = session.request(method='GET', url=ip_string, data=xml_request_string, auth=(id.get(),
-                                                password.get()), verify=False)
+                                                                                                           password.get()),
+                                               verify=False)
 
                     with open('log.txt', 'a', encoding='UTF-8') as log:
                         log.write(strftime(str("%H:%M:%S %Y-%m-%d") + ' GetOrderMenu query result' + ' ' + response.text
-                                  + '\n'))
+                                           + '\n'))
 
                     # С помощью The ElementTree XML API делаем парсинг ответа из строки
                     parsed_ident_nodes = ET.fromstring(response.content)
@@ -129,15 +133,14 @@ class Visual():
                     # Заполняем значения Combobox (см. кнопка "Запросить меню" во второй секции)
                     self.entry_xml_create_tab_2_arg4['values'] = idents
 
-                except requests.exceptions.ConnectionError as e:
+                except requests.ConnectionError as e:
                     # Cоздадим объект для вывода ошибки в лог
                     error_log = CustomFunctions(root)
-                    error_log.os_error_log(e)
-
+                    error_log.connection_error_log(e)
 
         def open_file():
             try:
-                file_path = filedialog.askopenfilename(title="Choose your file", filetypes=[("json files","*.json")])
+                file_path = filedialog.askopenfilename(title="Choose your file", filetypes=[("json files", "*.json")])
                 # filename = 'presets.json'
                 with open(file_path, 'r') as f_obj:
                     file_import = json.load(f_obj)
@@ -151,7 +154,7 @@ class Visual():
 
         def save_file():
             try:
-                file_path = filedialog.asksaveasfilename(title="Choose your file", filetypes=[("json files","*.json")])
+                file_path = filedialog.asksaveasfilename(title="Choose your file", filetypes=[("json files", "*.json")])
                 '''Собирем файл для экспорта из полей ip и порт'''
                 file_export = [str(ip_add.get()), str(port.get()), str(id.get()), str(password.get())]
                 with open(file_path, 'w') as f_obj:
@@ -161,8 +164,13 @@ class Visual():
 
         def request():
             # Получаем аргументы запроса
-            a1 = self.entry_xml_request_arg1.get()
-
+            if self.entry_xml_request_arg1.get() == 'Get Waiter List':
+                a1 = 'GetRefData" RefName="Restaurants" IgnoreEnums="1" WithChildItems="3" WithMacroProp="1" ' \
+                     'OnlyActive = "1" PropMask="RIChildItems.(Ident,Name,genRestIP,genprnStation,' \
+                     'genDefDlvCurrency,AltName,RIChildItems.TRole(ItemIdent,passdata,Name,AltName,gen*,' \
+                     'RIChildItems.(Code,Ident,Name,AltName,gen*)))'
+            else:
+                a1 = self.entry_xml_request_arg1.get()
             i = ip_add.get()
             p = port.get()
             ''' Проверим, ввел ли ли пользователь ip и порт, если нет - выдадим ошибку'''
@@ -196,7 +204,7 @@ class Visual():
                     xmldoc = minidom.parseString(response.content)
                     xmldoc.normalize()
 
-                    if a1 == "GetOrderList":
+                    if a1 == 'GetOrderList':
                         n = 1
                         self.text_field.delete(1.0, END)
                         parsed_order_nodes = ET.fromstring(response.content)
@@ -208,7 +216,7 @@ class Visual():
                                     self.text_field.insert(1.0, (str(n) + ". " + "Визит (ID) = " + visit.get(
                                         'VisitID') + "\n" + "Завершен= " + visit.get(
                                         'Finished') + "\n" + "Количество гостей = " + visit.get(
-                                        'GuestsCount')  + "\n" + "-" * 47 + "\n" + "ID заказа = " + order.get(
+                                        'GuestsCount') + "\n" + "-" * 47 + "\n" + "ID заказа = " + order.get(
                                         'OrderID') + "\n" + "Имя заказа = " + order.get(
                                         'OrderName') + "\n" + "GUID = " + order.get(
                                         'guid') + "\n" "Стол (ID) = " + order.get(
@@ -231,11 +239,11 @@ class Visual():
                                 elif visit.get('Finished') == '1':
 
                                     self.text_field.insert(1.0, (str(n) + ". " +
-                                        "Визит (ID) = " + visit.get('VisitID') + "\n" +
-                                        "Завершен= " + visit.get('Finished') + "\n" +
-                                        "Количество гостей = " + visit.get(
+                                                                 "Визит (ID) = " + visit.get('VisitID') + "\n" +
+                                                                 "Завершен= " + visit.get('Finished') + "\n" +
+                                                                 "Количество гостей = " + visit.get(
                                         'GuestsCount') + "\n" + "-" * 47 + "\n" +
-                                        "ID заказа = " + order.get(
+                                                                 "ID заказа = " + order.get(
                                         'OrderID') + "\n" + "Имя заказа = " + order.get(
                                         'OrderName') + "\n" + "GUID = " + order.get(
                                         'guid') + "\n" "Стол (ID) = " + order.get(
@@ -262,7 +270,7 @@ class Visual():
                                     self.text_field.insert(1.0, (str(n) + ". " + "Визит (ID) = " + visit.get(
                                         'VisitID') + "\n" + "Завершен= " + visit.get(
                                         'Finished') + "\n" + "Количество гостей = " + visit.get(
-                                        'GuestsCount')  + "\n" + "-" * 47 + "\n" + "ID заказа = " + order.get(
+                                        'GuestsCount') + "\n" + "-" * 47 + "\n" + "ID заказа = " + order.get(
                                         'OrderID') + "\n" + "Имя заказа = " + order.get(
                                         'OrderName') + "\n" + "GUID = " + order.get(
                                         'guid') + "\n" "Стол (ID) = " + order.get(
@@ -284,11 +292,11 @@ class Visual():
 
                                 elif visit.get('Finished') == '1':
                                     self.text_field.insert(1.0, (str(n) + ". " +
-                                        "Визит (ID) = " + visit.get('VisitID') + "\n" +
-                                        "Завершен= " + visit.get('Finished') + "\n" +
-                                        "Количество гостей = " + visit.get(
+                                                                 "Визит (ID) = " + visit.get('VisitID') + "\n" +
+                                                                 "Завершен= " + visit.get('Finished') + "\n" +
+                                                                 "Количество гостей = " + visit.get(
                                         'GuestsCount') + "\n" + "-" * 47 + "\n" +
-                                        "ID заказа = " + order.get(
+                                                                 "ID заказа = " + order.get(
                                         'OrderID') + "\n" + "Имя заказа = " + order.get(
                                         'OrderName') + "\n" + "GUID = " + order.get(
                                         'guid') + "\n" "Стол (ID) = " + order.get(
@@ -310,44 +318,47 @@ class Visual():
                                     n += 1
 
 
-                    elif a1 == 'GetRefData" RefName = "EMPLOYEES':
+                    elif a1 == 'GetRefData" RefName="Restaurants" IgnoreEnums="1" WithChildItems="3" WithMacroProp="1" ' \
+                     'OnlyActive = "1" PropMask="RIChildItems.(Ident,Name,genRestIP,genprnStation,' \
+                     'genDefDlvCurrency,AltName,RIChildItems.TRole(ItemIdent,passdata,Name,AltName,gen*,' \
+                     'RIChildItems.(Code,Ident,Name,AltName,gen*)))':
                         self.text_field.delete(1.0, END)
                         parsed_waiter_nodes = ET.fromstring(response.content)
-                        for item in parsed_waiter_nodes.findall("./RK7Reference/Items/Item"):
-                            waiter = (item.attrib)
-                            if waiter.get('Status') == 'rsActive' and waiter.get(
-                                   'ActiveHierarchy') == 'true':
-                                self.text_field.insert(1.0, ("Официант (Имя)= " + waiter.get(
-                                    'Name') + "\n" + "Официант (Код)= " + waiter.get(
-                                    'Code') + "\n" + "Официант (ID) = " + waiter.get(
-                                    'Ident') + "\n" + "-" * 47 + "\n"))
-
+                        for item in parsed_waiter_nodes.findall("./RK7Reference/RIChildItems/TRK7Restaurant"):
+                            restaurant = (item.attrib)
+                            for item in parsed_waiter_nodes.findall("./RK7Reference/RIChildItems/TRK7Restaurant/RIChildItems/TRole"):
+                                role = item.attrib
+                                waiter = item[0][0].attrib
+                                self.text_field.insert(1.0, ("Ресторан = " +
+                                                             restaurant.get('Name') + "\n" + "Роль = " +
+                                                             role.get('Name') + "\n" + "Официант (Имя) = " +
+                                                             waiter.get('Name') + "\n" + "Официант (Код) = " +
+                                                             waiter.get('Code') + "\n" + "Официант (ID) = " +
+                                                             waiter.get('Ident') + "\n" + "=" * 47 + "\n"))
                     elif a1 == "GetRefList":
                         self.text_field.delete(1.0, END)
                         references = xmldoc.getElementsByTagName("RK7Reference")
                         for reference in references:
                             self.text_field.insert(1.0, (
-                            "RefName = " + reference.attributes.item(0).value + " " + "Count = " + reference.
-                            attributes.item(1).value + " " + " DataVersion = " + reference.attributes.item(
-                                2).value + "\n" + "-" * 60 + "\n"))
+                                "RefName = " + reference.attributes.item(0).value + " " + "Count = " + reference.
+                                attributes.item(1).value + " " + " DataVersion = " + reference.attributes.item(
+                                    2).value + "\n" + "-" * 60 + "\n"))
 
                     else:
                         self.text_field.delete(1.0, END)
                         self.text_field.insert(1.0, response.content)
 
                 except OSError as e:
-                    # print(e)
-                    messagebox.showerror(title='Connection error', message=e)
-                    with open('log.txt', 'a', encoding='UTF-8') as log:
-                        log.write(strftime(str("%H:%M:%S %Y-%m-%d") + str(e) + '\n'))
-
+                    error_log = CustomFunctions(root)
+                    error_log.connection_error_log(e)
 
         def create():
             xml_request_string = '<?xml version="1.0" encoding="UTF-8"?><RK7Query><RK7CMD CMD="CreateOrder"><Order>' \
                                  '<OrderType code= "' + str(self.entry_xml_create_tab_2_arg1.get()) + '" />' \
-                                '<Table code= "' + str(self.entry_xml_create_tab_2_arg2.get()) + '" /></Order>' \
-                                '</RK7CMD></RK7Query>'
-            #print(xml_request_string)
+                                                                                                      '<Table code= "' + str(
+                self.entry_xml_create_tab_2_arg2.get()) + '" /></Order>' \
+                                                          '</RK7CMD></RK7Query>'
+            # print(xml_request_string)
             i_2 = ip_add.get()
             p_2 = port.get()
             ''' Проверим, ввел ли ли пользователь ip и порт, если нет - выдадим ошибку'''
@@ -388,9 +399,8 @@ class Visual():
                                            str(response_save_order.content) + '\n'))
 
                 except OSError as e:
-                    messagebox.showerror(title='Connection error', message=e)
-                    with open('log.txt', 'a', encoding='UTF-8') as log:
-                        log.write(str(' ' + strftime("%H:%M:%S %Y-%m-%d")) + str(e) + '\n')
+                    error_log = CustomFunctions(root)
+                    error_log.connection_error_log(e)
 
         def pay():
             xml_pay_string = '<RK7Query><RK7CMD CMD="PayOrder"><Order guid="' + \
@@ -412,7 +422,7 @@ class Visual():
                 try:
                     requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
                     response_pay_order = session.request(method='POST', url=ip_string_3, data=xml_pay_order_string,
-                    auth=(id.get(), password.get()), verify=False)
+                                                         auth=(id.get(), password.get()), verify=False)
 
                     xmldoc = minidom.parseString(response_pay_order.text)
                     xmldoc.normalize()
@@ -424,10 +434,8 @@ class Visual():
 
 
                 except OSError as e:
-                    # print(e)
-                    messagebox.showerror(title='Connection error', message=e)
-                    with open('log.txt', 'a', encoding='UTF-8') as log:
-                        log.write(strftime(str("%H:%M:%S %Y-%m-%d") + str(e) + '\n'))
+                    error_log = CustomFunctions(root)
+                    error_log.connection_error_log(e)
 
         '''Объявили переменные для полей'''
 
@@ -453,7 +461,6 @@ class Visual():
         ip_add = StringVar()
         port = StringVar()
 
-
         '''Создали строку меню'''
 
         # Выключили старый стиль меню
@@ -471,7 +478,7 @@ class Visual():
         self.file.entryconfig('Open...', accelerator="Ctrl+O")
 
         # Shortcut для открытия файла
-        #root.bind('<Control-o>', open_file())
+        # root.bind('<Control-o>', open_file())
 
         '''Создали вкладки'''
 
@@ -492,8 +499,8 @@ class Visual():
 
         '''Первая вкладка'''
 
-        self.entry_xml_request_arg1 = ttk.Combobox(self.frame_1, values=['GetOrderList', GetWaiterList, 'GetRefList'],
-                                                                         width=17, state='readonly')
+        self.entry_xml_request_arg1 = ttk.Combobox(self.frame_1, values=['GetOrderList', 'Get Waiter List',
+                                                                         'GetRefList'], width=17, state='readonly')
         # Поле IP & port
         self.ip_label = Label(self.frame_1, text='IP-Address').place(x=25, y=8)
         self.port_label = Label(self.frame_1, text='Port').place(x=115, y=8)
@@ -508,7 +515,6 @@ class Visual():
         self.password_entry = ttk.Entry(self.frame_1, width=20, textvariable=password)
         self.password_entry.place(x=110, y=75, width=40)
         self.password_entry.config(show="*")
-
 
         self.entry_xml_request_arg1.place(x=15, y=116)
         self.entry_xml_request_arg2 = ttk.Entry(self.frame_1, width=20, textvariable=xml_arg2).place(x=15, y=150)
@@ -572,8 +578,8 @@ class Visual():
 
         # Кнопка "Запросить коллекции"
         '''См. кнопку "Код блюда"'''
-        self.button_request_menu = ttk.Button(self.root, text='Запросить коллекции', command=collections_call).place\
-                                                                                                           (x=590, y=66)
+        self.button_request_menu = ttk.Button(self.root, text='Запросить коллекции', command=collections_call).place \
+            (x=590, y=66)
         # Кнопка "Создать"
         self.button_create = ttk.Button(self.frame_2, text='Создать', command=create).place(x=15, y=330)
 
@@ -596,7 +602,7 @@ class Visual():
         # Код станции(Combobox)
         self.label_xml_create_tab_3_arg3 = Label(self.frame_3, text='Код станции').place(x=15, y=153)
         self.entry_xml_create_tab_3_arg3 = ttk.Combobox(self.frame_3, textvariable=xml_arg3_tab_3,
-                                                        width = 17, state = 'readonly')
+                                                        width=17, state='readonly')
         self.entry_xml_create_tab_3_arg3.place(x=15, y=174)
         # ID валюты
         self.label_xml_create_tab_3_arg4 = Label(self.frame_3, text='ID валюты').place(x=15, y=195)
@@ -625,6 +631,7 @@ class Visual():
 
         # Добавим обратную связь - скроллбар будет анализировать количество текста и исходя из него отображать размер
         self.text_field_tab_3.config(yscrollcommand=self.scrollbar_tab_3.set)
+
 
 root = Tk()
 visual = Visual(root)
