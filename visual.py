@@ -32,8 +32,6 @@ class Visual():
         starting_log = CustomFunctions(root)
         starting_log.app_start()
 
-        #with open('log.txt', 'a') as log:
-        #    log.write(strftime(str("%H:%M:%S %Y-%m-%d") + ' Application started ' + 'version ' + self.version + '\n'))
 
         root.title("XML Parser v." + self.version)
 
@@ -87,39 +85,50 @@ class Visual():
                 messagebox.showwarning(title='Error', message="Введите IP-адрес и порт!")
             else:
                 try:
-                    # Создадим экземпляр класса Request для парсинга запросов и будем применять метод
-                    #  "tab_2_fields_request" для каждого нужного нам запроса.
+                    ''' Создадим экземпляр класса Request для парсинга запросов и будем применять метод
+                    "code_list_request" для каждого нужного нам запроса - делаем запрос к серверу, получаем список
+                    коллекций по имени переменной (столы, валюты и т.д.) и вставляем их в поля GUI'''
                     collections_request = Request(root)
                     # Вставим полученные от парсера значения в поле "Тип заказа"
-                    self.entry_xml_create_tab_2_arg1['values'] = collections_request.tab_2_fields_request \
-                        ('UNCHANGEABLEORDERTYPES', i, p)
+                    self.entry_xml_create_tab_2_arg1['values'] = collections_request.code_list_request \
+                    ('UNCHANGEABLEORDERTYPES', ip_add.get(), port.get(), id.get(), password.get())
+                    collections_request.name_list_request()
+
+                    print(collections_request.code_list_request \
+                    ('UNCHANGEABLEORDERTYPES', ip_add.get(), port.get(), id.get(), password.get()))
 
                     # Вставим полученные от парсера значения в поле "Код стола"
-                    self.entry_xml_create_tab_2_arg2['values'] = collections_request.tab_2_fields_request('Tables', i,
-                                                                                                          p)
+                    self.entry_xml_create_tab_2_arg2['values'] = collections_request.code_list_request\
+                    ('Tables', ip_add.get(), port.get(), id.get(), password.get())
 
                     # Вставим полученные от парсера значения в поле "Код станции"
-                    self.entry_xml_create_tab_2_arg3['values'] = collections_request.tab_2_fields_request('Cashes', i,
-                                                                                                          p)
-                    self.entry_xml_create_tab_3_arg3['values'] = collections_request.tab_2_fields_request('Cashes', i,
-                                                                                                          p)
-                    self.entry_xml_create_tab_3_arg4['values'] = collections_request.tab_2_fields_request('CURRENCIES',
-                                                                                                          i, p)
+                    self.entry_xml_create_tab_2_arg3['values'] = collections_request.code_list_request\
+                    ('Cashes', ip_add.get(), port.get(), id.get(), password.get())
 
-                    # Собираем строку для отправки запроса
-                    xml_request_string = '<RK7Query><RK7CMD CMD="GetOrderMenu" StationCode="' + str(
-                        collections_request.tab_2_fields_request('Cashes', i, p)[0]) + '" DateTime="' + strftime(
-                        "%Y-%m-%d %H:%M:%S") + '" /></RK7Query>'
+                    self.entry_xml_create_tab_3_arg3['values'] = collections_request.code_list_request\
+                    ('Cashes', ip_add.get(), port.get(), id.get(), password.get())
+
+                    # Вставим полученные от парсера значения в поле "Код валюты"
+                    self.entry_xml_create_tab_3_arg4['values'] = collections_request.code_list_request\
+                    ('CURRENCIES', ip_add.get(), port.get(), id.get(), password.get())
+
+                    ''' Собираем строку для отправки запроса. Для этого вызовем метод "code_list_request" для 
+                    объекта "collections_request". Этот метод нам понадобится для того, чтобы получить список кодов касс
+                     (нам нужена хотя бы одна - ее код нужен для создания запроса в поле StationCode)'''
+
+                    xml_request_string = '<RK7Query><RK7CMD CMD="GetOrderMenu" StationCode="' + \
+                    str(collections_request.code_list_request('Cashes', ip_add.get(), port.get(), id.get(),
+                    password.get())[0]) + '" DateTime="' + strftime("%Y-%m-%d %H:%M:%S") + '" /></RK7Query>'
+
                     ip_string = 'https://' + i + ":" + p + '/rk7api/v0/xmlinterface.xml'
                     # Убираем warnings об SSL (warnings выводятся даже при отключении SSL)
                     requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
                     # Запрос с выключенным SSL
-                    response = session.request(method='GET', url=ip_string, data=xml_request_string, auth=(id.get(),
-                                                                                                           password.get()),
-                                               verify=False)
+                    response = session.request(method='GET', url=ip_string, data=xml_request_string,
+                                               auth=(id.get(), password.get()), verify=False)
 
-                    log = CustomFunctions(root)
-                    log.log_writing(response)
+                    response_log = CustomFunctions(root)
+                    response_log.log_writing(response)
 
                     # С помощью The ElementTree XML API делаем парсинг ответа из строки
                     parsed_ident_nodes = ET.fromstring(response.content)
@@ -355,12 +364,13 @@ class Visual():
         def create():
             xml_request_string = '<?xml version="1.0" encoding="UTF-8"?><RK7Query><RK7CMD CMD="CreateOrder"><Order>' \
                                  '<OrderType code= "' + str(self.entry_xml_create_tab_2_arg1.get()) + '" />' \
-                                                                                                      '<Table code= "' + str(
-                self.entry_xml_create_tab_2_arg2.get()) + '" /></Order>' \
-                                                          '</RK7CMD></RK7Query>'
-            # print(xml_request_string)
+                                 '<Table code= "' + str(self.entry_xml_create_tab_2_arg2.get()) + '" /></Order>' \
+                                 '</RK7CMD></RK7Query>'
+
+
             i_2 = ip_add.get()
             p_2 = port.get()
+
             ''' Проверим, ввел ли ли пользователь ip и порт, если нет - выдадим ошибку'''
             if not i_2 and not p_2:
                 messagebox.showwarning(title='Error', message="Введите IP-адрес и порт!")
@@ -389,7 +399,7 @@ class Visual():
 
                     xml_save_order_string = xml_save_order.encode('utf-8')
                     response_save_order = session.request(method='POST', url=ip_string_2, data=xml_save_order_string,
-                                                          auth=('admin', '1'), verify=False)
+                                                          auth=(id.get(), password.get()), verify=False)
                     # Перекодируем response_save_order в нужную нам кодировку (кириллица поломана)
                     response_save_order.encoding = 'UTF-8'
                     # Уже перекодированные данные выводим с помощью метода .text

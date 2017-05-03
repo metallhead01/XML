@@ -44,3 +44,6 @@ class CustomFunctions:
         logger.critical(e_str)
         #with open('log.txt', 'a', encoding='utf-8') as log:
         #    log.write(strftime("%H:%M:%S %Y-%m-%d") + e_str_utf + '\n')
+
+    def debug_log_writing(self, response):
+        logger.debug(response.text)
