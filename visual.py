@@ -14,15 +14,14 @@ from tab_2_requests import *
 import os
 from tkinter import *
 from tkinter import ttk
-from tkinter import messagebox
 from tkinter import filedialog
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 import json
 from xml.dom import minidom
 import xml.etree.ElementTree as ET
-from time import strftime
 from custom_functions import *
+from time import strftime
 
 
 class Visual():
@@ -30,9 +29,11 @@ class Visual():
         self.root = root
         self.version = '1.3.8'
 
-        # Настроим лог
-        with open('log.txt', 'a') as log:
-            log.write(strftime(str("%H:%M:%S %Y-%m-%d") + ' Application started ' + 'version ' + self.version + '\n'))
+        starting_log = CustomFunctions(root)
+        starting_log.app_start()
+
+        #with open('log.txt', 'a') as log:
+        #    log.write(strftime(str("%H:%M:%S %Y-%m-%d") + ' Application started ' + 'version ' + self.version + '\n'))
 
         root.title("XML Parser v." + self.version)
 
@@ -117,9 +118,8 @@ class Visual():
                                                                                                            password.get()),
                                                verify=False)
 
-                    with open('log.txt', 'a', encoding='UTF-8') as log:
-                        log.write(strftime(str("%H:%M:%S %Y-%m-%d") + ' GetOrderMenu query result' + ' ' + response.text
-                                           + '\n'))
+                    log = CustomFunctions(root)
+                    log.log_writing(response)
 
                     # С помощью The ElementTree XML API делаем парсинг ответа из строки
                     parsed_ident_nodes = ET.fromstring(response.content)
@@ -637,3 +637,6 @@ root = Tk()
 visual = Visual(root)
 
 root.mainloop()
+
+close_log = CustomFunctions(root)
+close_log.app_close()

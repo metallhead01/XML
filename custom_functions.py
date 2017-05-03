@@ -1,26 +1,34 @@
 import locale
 import codecs
-import sys
-from time import strftime
+from sys import *
 from tkinter import messagebox
 import re
-import logging
+import logging.config
+
+# Указываю имя файла с настройками для внешнего редактирования
+#logging.config.fileConfig('logging.ini')
+# Для вывода в файл
+logger = logging.getLogger('xmlParser')
 
 
 class CustomFunctions:
     def __init__(self, root):
         self.root = root
 
-    logging.basicConfig(format='%(asctime)s %(levelname)s : %(message)s', level=logging.DEBUG, filename='log.log',
-                        datefmt='%d-%b-%Y %H:%M:%S.000Z')
-    #logging.basicConfig(format=u'%(asctime)s%(log.txt)s[LINE:%(lineno)d]# %(levelname)-8s [%(asctime)s] %(message)s',
-    #                    level=logging.DEBUG)
+    logging.basicConfig(level=logging.DEBUG)
+
+    def app_start(self):
+        logger.info('Application Started')
+
+    def app_close(self):
+        logger.info('Application Closed')
 
     def log_writing(self, response):
-        with open('log.txt', 'a', encoding='UTF-8') as log:
-            log.write(
-                strftime(
-                    str("%H:%M:%S %Y-%m-%d") + ' ' + str(response.content) + '\n'))
+        logger.info(response.text)
+        #with open('log.txt', 'a', encoding='UTF-8') as log:
+        #    log.write(
+        #        strftime(
+        #            str("%H:%M:%S %Y-%m-%d") + ' ' + str(response.content) + '\n'))
 
     def connection_error_log(self, e):
         # Вытащил аргументы из окна ошибки для отображения на warning-окне и сконвертировал в строку
@@ -33,11 +41,6 @@ class CustomFunctions:
         e_str_unicode = codecs.encode(e_str, 'utf-8')
         e_str_utf = codecs.decode(e_str_unicode, encoding='utf-8')
         messagebox.showerror(title='Connection error', message=e_str)
-        logging.critical(e_str)
+        logger.critical(e_str)
         #with open('log.txt', 'a', encoding='utf-8') as log:
         #    log.write(strftime("%H:%M:%S %Y-%m-%d") + e_str_utf + '\n')
-
-        '''
-        with open('log.txt', 'a', encoding='utf-8') as log:
-            log.write(strftime("%H:%M:%S %Y-%m-%d") + e_str_utf + '\n')
-        '''
