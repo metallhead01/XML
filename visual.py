@@ -89,36 +89,37 @@ class Visual():
                     "code_list_request" для каждого нужного нам запроса - делаем запрос к серверу, получаем список
                     коллекций по имени переменной (столы, валюты и т.д.) и вставляем их в поля GUI'''
                     collections_request = Request(root)
-                    # Вставим полученные от парсера значения в поле "Тип заказа"
-                    self.entry_xml_create_tab_2_arg1['values'] = collections_request.code_list_request \
-                    ('UNCHANGEABLEORDERTYPES', ip_add.get(), port.get(), id.get(), password.get())
-                    collections_request.name_list_request()
-
-                    print(collections_request.code_list_request \
-                    ('UNCHANGEABLEORDERTYPES', ip_add.get(), port.get(), id.get(), password.get()))
+                    ''' Вставим полученные от парсера значения в поле "Тип заказа". Т.к. функция возвращает нам словарь,
+                     выковырем значения с помощью стандартной функции .value и сконвертируем полученные значения в список'''
+                    self.entry_xml_create_tab_2_arg1['values'] = list(collections_request.code_list_request\
+                    ('UNCHANGEABLEORDERTYPES', ip_add.get(), port.get(), id.get(), password.get()).values())
 
                     # Вставим полученные от парсера значения в поле "Код стола"
-                    self.entry_xml_create_tab_2_arg2['values'] = collections_request.code_list_request\
-                    ('Tables', ip_add.get(), port.get(), id.get(), password.get())
+                    self.entry_xml_create_tab_2_arg2['values'] = list(collections_request.code_list_request\
+                    ('Tables', ip_add.get(), port.get(), id.get(), password.get()).values())
 
                     # Вставим полученные от парсера значения в поле "Код станции"
-                    self.entry_xml_create_tab_2_arg3['values'] = collections_request.code_list_request\
-                    ('Cashes', ip_add.get(), port.get(), id.get(), password.get())
+                    self.entry_xml_create_tab_2_arg3['values'] = list(collections_request.code_list_request\
+                    ('Cashes', ip_add.get(), port.get(), id.get(), password.get()).values())
 
-                    self.entry_xml_create_tab_3_arg3['values'] = collections_request.code_list_request\
-                    ('Cashes', ip_add.get(), port.get(), id.get(), password.get())
+                    self.entry_xml_create_tab_3_arg3['values'] = list(collections_request.code_list_request\
+                    ('Cashes', ip_add.get(), port.get(), id.get(), password.get()).values())
 
                     # Вставим полученные от парсера значения в поле "Код валюты"
-                    self.entry_xml_create_tab_3_arg4['values'] = collections_request.code_list_request\
-                    ('CURRENCIES', ip_add.get(), port.get(), id.get(), password.get())
+                    self.entry_xml_create_tab_3_arg4['values'] = list(collections_request.code_list_request\
+                    ('CURRENCIES', ip_add.get(), port.get(), id.get(), password.get()).values())
 
                     ''' Собираем строку для отправки запроса. Для этого вызовем метод "code_list_request" для 
                     объекта "collections_request". Этот метод нам понадобится для того, чтобы получить список кодов касс
-                     (нам нужена хотя бы одна - ее код нужен для создания запроса в поле StationCode)'''
+                     (нам нужена хотя бы одна - ее код нужен для создания запроса в поле StationCode)
+                    
+                    Аналогично верхним функциям, т.к. функция возвращает нам словарь, выковырем значения с помощью
+                    стандартной функции .value и сконвертируем полученные значения в список и затем с помощью [0]
+                    получим первый эелемент списка'''
 
                     xml_request_string = '<RK7Query><RK7CMD CMD="GetOrderMenu" StationCode="' + \
-                    str(collections_request.code_list_request('Cashes', ip_add.get(), port.get(), id.get(),
-                    password.get())[0]) + '" DateTime="' + strftime("%Y-%m-%d %H:%M:%S") + '" /></RK7Query>'
+                    str(list(collections_request.code_list_request('Cashes', ip_add.get(), port.get(), id.get(),
+                    password.get()).values())[0]) + '" DateTime="' + strftime("%Y-%m-%d %H:%M:%S") + '" /></RK7Query>'
 
                     ip_string = 'https://' + i + ":" + p + '/rk7api/v0/xmlinterface.xml'
                     # Убираем warnings об SSL (warnings выводятся даже при отключении SSL)
