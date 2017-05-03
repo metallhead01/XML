@@ -6,7 +6,7 @@ import re
 import logging.config
 
 # Указываю имя файла с настройками для внешнего редактирования
-#logging.config.fileConfig('logging.ini')
+logging.config.fileConfig('logging.ini')
 # Для вывода в файл
 logger = logging.getLogger('xmlParser')
 
