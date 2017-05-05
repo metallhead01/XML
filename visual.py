@@ -12,12 +12,13 @@
 
 import os
 import sys
-sys.path.append(os.path.join(sys.path[0], "modules"))
+#sys.path.append(os.path.join(sys.path[0], "modules"))
 import sqlite3
 import time
 import json
 import requests
 import xml.etree.ElementTree as ET
+from tkinter import messagebox
 from tkinter import *
 from tkinter import ttk
 from tkinter import filedialog
@@ -59,8 +60,8 @@ class Visual():
 
         '''Зададим размер и положение экрана в зависимости от размера экрана пользователя'''
         # root.geometry("900x700+500+600")
-        w = 800  # width for the Tk root
-        h = 600  # height for the Tk root
+        w = 900  # width for the Tk root
+        h = 800  # height for the Tk root
 
         # get screen width and height
         ws = root.winfo_screenwidth()  # width of the screen
@@ -339,9 +340,8 @@ class Visual():
         def create():
             xml_request_string = '<?xml version="1.0" encoding="UTF-8"?><RK7Query><RK7CMD CMD="CreateOrder"><Order>' \
                                  '<OrderType code= "' + str(self.entry_xml_create_tab_2_arg1.get()) + '" />' \
-                                                                                                      '<Table code= "' + str(
-                self.entry_xml_create_tab_2_arg2.get()) + '" /></Order>' \
-                                                          '</RK7CMD></RK7Query>'
+                                 '<Table code= "' + str(self.entry_xml_create_tab_2_arg2.get()) + '" />' \
+                                 '</Order>''</RK7CMD></RK7Query>'
 
             i_2 = ip_add.get()
             p_2 = port.get()
@@ -438,6 +438,11 @@ class Visual():
         xml_arg3_tab_3 = StringVar()
         xml_arg4_tab_3 = StringVar()
         xml_arg5_tab_3 = StringVar()
+        xml_arg1_tab_4 = StringVar()
+        xml_arg2_tab_4 = StringVar()
+        xml_arg3_tab_4 = StringVar()
+        xml_arg4_tab_4 = StringVar()
+        xml_arg5_tab_4 = StringVar()
 
         id = StringVar()
         password = StringVar()
@@ -466,7 +471,7 @@ class Visual():
 
         '''Создали вкладки'''
 
-        self.tab_1 = ttk.Notebook(root, height=500, width=755)
+        self.tab_1 = ttk.Notebook(root, height=600, width=850)
         self.tab_1.place(x=15, y=15)
 
         '''Создали frame'''
@@ -474,12 +479,14 @@ class Visual():
         self.frame_1 = ttk.Frame(self.tab_1)
         self.frame_2 = ttk.Frame(self.tab_1)
         self.frame_3 = ttk.Frame(self.tab_1)
+        self.frame_4 = ttk.Frame(self.tab_1)
 
         '''Добавили frame на вкладки и задали имена вкладок'''
 
         self.tab_1.add(self.frame_1, text="Парсер")
         self.tab_1.add(self.frame_2, text="Создание заказа")
         self.tab_1.add(self.frame_3, text="Оплата заказа")
+        self.tab_1.add(self.frame_4, text="Тестер")
 
         '''Первая вкладка'''
 
@@ -495,7 +502,7 @@ class Visual():
 
         self.id_label = Label(self.frame_1, text='User name').place(x=30, y=55)
         self.password_label = Label(self.frame_1, text='Password').place(x=102, y=55)
-        self.id_address_entry = ttk.Entry(self.frame_1, width=20, textvariable=id).place(x=15, y=75, width=90)
+        self.id_entry = ttk.Entry(self.frame_1, width=20, textvariable=id).place(x=15, y=75, width=90)
         self.password_entry = ttk.Entry(self.frame_1, width=20, textvariable=password)
         self.password_entry.place(x=110, y=75, width=40)
         self.password_entry.config(show="*")
@@ -507,7 +514,7 @@ class Visual():
         self.entry_xml_request_arg5 = ttk.Entry(self.frame_1, width=20, textvariable=xml_arg5).place(x=15, y=270)
 
         self.text_field = Text(self.frame_1, height=25, width=70, wrap=WORD, relief=SOLID)
-        self.text_field.place(x=170, y=70)
+        self.text_field.place(x=190, y=120)
 
         self.button_request = ttk.Button(self.frame_1, text='Request', command=request).place(x=15, y=305)
 
@@ -526,7 +533,7 @@ class Visual():
         # Поле ID & password
         self.id_label_tab_2 = Label(self.frame_2, text='User name').place(x=30, y=53)
         self.password_label_tab_2 = Label(self.frame_2, text='Password').place(x=102, y=53)
-        self.id_address_entry_tab_2 = ttk.Entry(self.frame_2, width=20, textvariable=id).place(x=15, y=75, width=90)
+        self.id_entry_tab_2 = ttk.Entry(self.frame_2, width=20, textvariable=id).place(x=15, y=75, width=90)
         self.password_entry_tab_2 = ttk.Entry(self.frame_2, width=20, textvariable=password)
         self.password_entry_tab_2.place(x=110, y=75, width=40)
         self.password_entry_tab_2.config(show="*")
@@ -558,12 +565,12 @@ class Visual():
 
         # Поле текста
         self.text_field_tab_2 = Text(self.frame_2, height=25, width=70, wrap=WORD, relief=SOLID)
-        self.text_field_tab_2.place(x=170, y=70)
+        self.text_field_tab_2.place(x=190, y=120)
 
         # Кнопка "Запросить коллекции"
         '''См. кнопку "Код блюда"'''
         self.button_request_menu = ttk.Button(self.root, text='Запросить коллекции', command=collections_call).place \
-            (x=590, y=66)
+            (x=202, y=85)
         # Кнопка "Создать"
         self.button_create = ttk.Button(self.frame_2, text='Создать', command=create).place(x=15, y=330)
 
@@ -603,7 +610,7 @@ class Visual():
 
         # Поле текста 3
         self.text_field_tab_3 = Text(self.frame_3, height=25, width=70, wrap=WORD, relief=SOLID)
-        self.text_field_tab_3.place(x=170, y=70)
+        self.text_field_tab_3.place(x=190, y=120)
 
         self.ip_label_tab_3 = Label(self.frame_3, text='IP-Address').place(x=25, y=8)
         self.port_label_tab_3 = Label(self.frame_3, text='Port').place(x=115, y=8)
@@ -615,6 +622,60 @@ class Visual():
 
         # Добавим обратную связь - скроллбар будет анализировать количество текста и исходя из него отображать размер
         self.text_field_tab_3.config(yscrollcommand=self.scrollbar_tab_3.set)
+
+        '''Чевертая вкладка'''
+
+        # Поле ID & password
+        self.id_label_tab_2 = Label(self.frame_4, text='User name').place(x=30, y=53)
+        self.password_label_tab_2 = Label(self.frame_4, text='Password').place(x=102, y=53)
+        self.id_entry_tab_2 = ttk.Entry(self.frame_4, width=20, textvariable=id).place(x=15, y=75, width=90)
+
+        self.password_entry_tab_2 = ttk.Entry(self.frame_4, width=20, textvariable=password)
+        self.password_entry_tab_2.place(x=110, y=75, width=40)
+        self.password_entry_tab_2.config(show="*")
+
+        self.ip_address_entry_tab_4 = ttk.Entry(self.frame_4, width=20, textvariable=ip_add).place(x=15, y=30, width=90)
+        self.port_entry_tab_4 = ttk.Entry(self.frame_4, width=20, textvariable=port).place(x=110, y=30, width=40)
+
+        # Тип заказа(Combobox)
+        self.label_xml_create_tab_2_arg1 = Label(self.frame_4, text='Количество заказов').place(x=15, y=98)
+        self.entry_xml_create_tab_2_arg1 = ttk.Entry(self.frame_4, width=20, textvariable=xml_arg1_tab_4)
+        self.entry_xml_create_tab_2_arg1.place(x=15, y=120)
+        # Стол (Combobox)
+        self.label_xml_create_tab_2_arg2 = Label(self.frame_2, text='Стол').place(x=15, y=141)
+        self.entry_xml_create_tab_2_arg2 = ttk.Combobox(self.frame_2, textvariable=xml_arg2_tab_2,
+                                                        width=17, state='readonly')
+        self.entry_xml_create_tab_2_arg2.place(x=15, y=163)
+        # Код станции (Combobox)
+        self.label_xml_create_tab_2_arg3 = Label(self.frame_2, text='Код станции').place(x=15, y=184)
+        self.entry_xml_create_tab_2_arg3 = ttk.Combobox(self.frame_2, textvariable=xml_arg3_tab_2,
+                                                        width=17, state='readonly')
+        self.entry_xml_create_tab_2_arg3.place(x=15, y=205)
+        # Код блюда (Combobox)
+        self.label_xml_create_tab_2_arg4 = Label(self.frame_2, text='Код блюда').place(x=15, y=228)
+        self.entry_xml_create_tab_2_arg4 = ttk.Combobox(self.frame_2, textvariable=xml_arg4_tab_2,
+                                                        width=17, state='readonly')
+        self.entry_xml_create_tab_2_arg4.place(x=15, y=250)
+
+        # Количество блюда
+        self.label_xml_create_tab_2_arg5 = Label(self.frame_2, text='Количество блюд').place(x=15, y=272)
+        self.entry_xml_create_tab_2_arg5 = ttk.Entry(self.frame_2, width=20, textvariable=xml_arg5_tab_2)
+        self.entry_xml_create_tab_2_arg5.place(x=15, y=295)
+
+        # Поле текста 4
+        self.text_field_tab_4 = Text(self.frame_4, height=25, width=70, wrap=WORD, relief=SOLID)
+        self.text_field_tab_4.place(x=190, y=120)
+
+        self.ip_label_tab_4 = Label(self.frame_4, text='IP-Address').place(x=25, y=8)
+        self.port_label_tab_4 = Label(self.frame_4, text='Port').place(x=115, y=8)
+
+        self.button_pay = ttk.Button(self.frame_4, text='Начать тестирование', command=pay).place(x=15, y=290)
+
+        self.scrollbar_tab_4 = ttk.Scrollbar(self.frame_4, orient=VERTICAL, command=self.text_field_tab_4.yview)
+        self.scrollbar_tab_4.pack(side=RIGHT, fill=Y)
+
+        # Добавим обратную связь - скроллбар будет анализировать количество текста и исходя из него отображать размер
+        self.text_field_tab_4.config(yscrollcommand=self.scrollbar_tab_4.set)
 
 
 root = Tk()
