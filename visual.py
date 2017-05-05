@@ -27,12 +27,13 @@ from custom_functions import *
 from time import strftime
 from tab_2_requests import *
 from xml.dom import minidom
+from stress_functions import *
 
 
 class Visual():
     def __init__(self, root):
         self.root = root
-        self.version = '1.3.8'
+        self.version = '1.4.2'
 
         starting_log = CustomFunctions(root)
         starting_log.app_start()
@@ -96,24 +97,25 @@ class Visual():
                     collections_request = Request(root)
                     ''' Вставим полученные от парсера значения в поле "Тип заказа". Т.к. функция возвращает нам словарь,
                      выковырем значения с помощью стандартной функции .value и сконвертируем полученные значения в список'''
-                    self.entry_xml_create_tab_2_arg1['values'] = list(collections_request.code_list_request\
-                    ('UNCHANGEABLEORDERTYPES', ip_add.get(), port.get(), id.get(),password.get(),'Order_Type').values())
+                    #self.entry_xml_create_tab_2_arg1['values'] = list(collections_request.code_list_request\
+                    #('UNCHANGEABLEORDERTYPES', ip_add.get(), port.get(), id.get(),password.get(),'Order_Type').values())
+
+                    collections_request.code_list_request('UNCHANGEABLEORDERTYPES', ip_add.get(), port.get(), id.get(),password.get(),'Order_Type')
 
                     # Вставим полученные от парсера значения в поле "Код стола"
-                    self.entry_xml_create_tab_2_arg2['values'] = list(collections_request.code_list_request\
-                    ('Tables', ip_add.get(), port.get(), id.get(), password.get(), 'Tables').values())
+                    collections_request.code_list_request('Tables', ip_add.get(), port.get(), id.get(), password.get(),'Tables')
 
                     # Вставим полученные от парсера значения в поле "Код станции"
-                    self.entry_xml_create_tab_2_arg3['values'] = list(collections_request.code_list_request\
-                    ('Cashes', ip_add.get(), port.get(), id.get(), password.get(), 'Cashes').values())
+                    collections_request.code_list_request('Cashes', ip_add.get(), port.get(), id.get(), password.get(),'Cashes')
 
-                    self.entry_xml_create_tab_3_arg3['values'] = list(collections_request.code_list_request\
-                    ('Cashes', ip_add.get(), port.get(), id.get(), password.get(), 'Cashes').values())
+                    # collections_request.code_list_request('Cashes', ip_add.get(), port.get(), id.get(), password.get(), 'Cashes')
 
                     # Вставим полученные от парсера значения в поле "Код валюты"
-                    self.entry_xml_create_tab_3_arg4['values'] = list(collections_request.code_list_request\
-                    ('CURRENCIES', ip_add.get(), port.get(), id.get(), password.get(), 'Currencies').values())
+                    collections_request.currencies_list_request('CURRENCIES', ip_add.get(), port.get(), id.get(), password.get(),'Currencies')
 
+                    collections_request.code_list_request('Employees', ip_add.get(), port.get(), id.get(), password.get(),'Employees')
+
+                    collections_request.menu_request(ip_add.get(), port.get(), id.get(), password.get())
                     # Заполняем значения Combobox (см. кнопка "Запросить меню" во второй секции)
                     #self.entry_xml_create_tab_2_arg4['values'] = list(collections_request.menu_request\
                     #(ip_add.get(), port.get(), id.get(), password.get()).values())
@@ -421,6 +423,11 @@ class Visual():
                     error_log = CustomFunctions(root)
                     error_log.connection_error_log(e)
 
+        def test():
+            start_test = Stress_functions()
+            start_test.start_testing(ip_add.get(), port.get(), id.get(),password.get(), xml_arg1_tab_4.get(),
+            xml_arg2_tab_4.get(), xml_arg3_tab_4.get())
+
         '''Объявили переменные для полей'''
 
         xml_arg1 = StringVar()
@@ -626,41 +633,38 @@ class Visual():
         '''Чевертая вкладка'''
 
         # Поле ID & password
-        self.id_label_tab_2 = Label(self.frame_4, text='User name').place(x=30, y=53)
-        self.password_label_tab_2 = Label(self.frame_4, text='Password').place(x=102, y=53)
-        self.id_entry_tab_2 = ttk.Entry(self.frame_4, width=20, textvariable=id).place(x=15, y=75, width=90)
-
-        self.password_entry_tab_2 = ttk.Entry(self.frame_4, width=20, textvariable=password)
-        self.password_entry_tab_2.place(x=110, y=75, width=40)
-        self.password_entry_tab_2.config(show="*")
+        self.id_label_tab_4 = Label(self.frame_4, text='User name').place(x=30, y=53)
+        self.password_label_tab_4 = Label(self.frame_4, text='Password').place(x=102, y=53)
+        self.id_entry_tab_4 = ttk.Entry(self.frame_4, width=20, textvariable=id).place(x=15, y=75, width=90)
+        self.password_entry_tab_4 = ttk.Entry(self.frame_4, width=20, textvariable=password)
+        self.password_entry_tab_4.place(x=110, y=75, width=40)
+        self.password_entry_tab_4.config(show="*")
 
         self.ip_address_entry_tab_4 = ttk.Entry(self.frame_4, width=20, textvariable=ip_add).place(x=15, y=30, width=90)
         self.port_entry_tab_4 = ttk.Entry(self.frame_4, width=20, textvariable=port).place(x=110, y=30, width=40)
 
-        # Тип заказа(Combobox)
-        self.label_xml_create_tab_2_arg1 = Label(self.frame_4, text='Количество заказов').place(x=15, y=98)
-        self.entry_xml_create_tab_2_arg1 = ttk.Entry(self.frame_4, width=20, textvariable=xml_arg1_tab_4)
-        self.entry_xml_create_tab_2_arg1.place(x=15, y=120)
-        # Стол (Combobox)
-        self.label_xml_create_tab_2_arg2 = Label(self.frame_2, text='Стол').place(x=15, y=141)
-        self.entry_xml_create_tab_2_arg2 = ttk.Combobox(self.frame_2, textvariable=xml_arg2_tab_2,
-                                                        width=17, state='readonly')
-        self.entry_xml_create_tab_2_arg2.place(x=15, y=163)
-        # Код станции (Combobox)
-        self.label_xml_create_tab_2_arg3 = Label(self.frame_2, text='Код станции').place(x=15, y=184)
-        self.entry_xml_create_tab_2_arg3 = ttk.Combobox(self.frame_2, textvariable=xml_arg3_tab_2,
-                                                        width=17, state='readonly')
-        self.entry_xml_create_tab_2_arg3.place(x=15, y=205)
+        # Количество заказов
+        self.label_xml_create_tab_4_arg1 = Label(self.frame_4, text='Количество заказов').place(x=15, y=98)
+        self.label_xml_create_tab_4_arg1 = ttk.Entry(self.frame_4, width=20, textvariable=xml_arg1_tab_4)
+        self.label_xml_create_tab_4_arg1.place(x=15, y=122)
+        # Время между заказами (сек)
+        self.label_xml_create_tab_4_arg2 = Label(self.frame_4, text='Время между заказами (сек)').place(x=15, y=141)
+        self.entry_xml_create_tab_4_arg2 = ttk.Entry(self.frame_4, width=20, textvariable=xml_arg2_tab_4)
+        self.entry_xml_create_tab_4_arg2.place(x=15, y=163)
+        # Время до закрытия (сек)
+        self.label_xml_create_tab_4_arg3 = Label(self.frame_4, text='Время до закрытия (сек)').place(x=15, y=184)
+        self.entry_xml_create_tab_4_arg3 = ttk.Entry(self.frame_4, width=20, textvariable=xml_arg3_tab_4)
+        self.entry_xml_create_tab_4_arg3.place(x=15, y=205)
         # Код блюда (Combobox)
-        self.label_xml_create_tab_2_arg4 = Label(self.frame_2, text='Код блюда').place(x=15, y=228)
-        self.entry_xml_create_tab_2_arg4 = ttk.Combobox(self.frame_2, textvariable=xml_arg4_tab_2,
-                                                        width=17, state='readonly')
-        self.entry_xml_create_tab_2_arg4.place(x=15, y=250)
+        #self.label_xml_create_tab_4_arg4 = Label(self.frame_4, text='Код блюда').place(x=15, y=228)
+        #self.entry_xml_create_tab_4_arg4 = ttk.Combobox(self.frame_4, textvariable=xml_arg4_tab_2,
+         #                                               width=17, state='readonly')
+        #self.entry_xml_create_tab_4_arg4.place(x=15, y=250)
 
         # Количество блюда
-        self.label_xml_create_tab_2_arg5 = Label(self.frame_2, text='Количество блюд').place(x=15, y=272)
-        self.entry_xml_create_tab_2_arg5 = ttk.Entry(self.frame_2, width=20, textvariable=xml_arg5_tab_2)
-        self.entry_xml_create_tab_2_arg5.place(x=15, y=295)
+        #self.label_xml_create_tab_4_arg5 = Label(self.frame_4, text='Количество блюд').place(x=15, y=272)
+        #self.entry_xml_create_tab_4_arg5 = ttk.Entry(self.frame_4, width=20, textvariable=xml_arg5_tab_2)
+        #self.entry_xml_create_tab_4_arg5.place(x=15, y=295)
 
         # Поле текста 4
         self.text_field_tab_4 = Text(self.frame_4, height=25, width=70, wrap=WORD, relief=SOLID)
@@ -669,7 +673,7 @@ class Visual():
         self.ip_label_tab_4 = Label(self.frame_4, text='IP-Address').place(x=25, y=8)
         self.port_label_tab_4 = Label(self.frame_4, text='Port').place(x=115, y=8)
 
-        self.button_pay = ttk.Button(self.frame_4, text='Начать тестирование', command=pay).place(x=15, y=290)
+        self.button_pay = ttk.Button(self.frame_4, text='Начать тестирование', command=test).place(x=15, y=290)
 
         self.scrollbar_tab_4 = ttk.Scrollbar(self.frame_4, orient=VERTICAL, command=self.text_field_tab_4.yview)
         self.scrollbar_tab_4.pack(side=RIGHT, fill=Y)

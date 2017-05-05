@@ -1,7 +1,6 @@
 import os
 import sys
 import time
-sys.path.append(os.path.join(sys.path[0], "modules"))
 import requests
 import xml.etree.ElementTree as ET
 import sqlite3
@@ -13,20 +12,17 @@ from random import randint
 from tkinter import messagebox
 
 
-logging.config.fileConfig('..\logging.ini')
+logging.config.fileConfig('logging.ini')
 logger = logging.getLogger('stressTesting')
-# Создали базу данных, если ее нет
-with open('reference.db', 'a') as base:
-    logger.info('DB was created.')
 
 
 class Stress_functions:
     def __init__(self):
 
     #def __init__(self, root):
-    #    self.root = root
+        #self.root = root
 
-        logging.debug('null')
+        logging.debug('Test sarted.')
 
     def start_testing(self, i, p, user_name, pass_word, orders_number, hold_time,pay_time):
         # Создаем соединение с нашей базой данных
@@ -47,8 +43,14 @@ class Stress_functions:
         d = cur_1.fetchone()[0]
         cur_1.execute('SELECT Count(key) FROM Currencies')
         e = cur_1.fetchone()[0]
+        cur_1.execute('SELECT Count(key) FROM Employees')
+        f = cur_1.fetchone()[0]
+        db.close()
+        count = 0
         # Т.к. начинаем с первого заказа, то количество раз, полученных от пользователя надо уменьшить на 1.
         while times <= (int(orders_number) - 1):
+            db = sqlite3.connect('reference.db')
+            cur_1 = db.cursor()
             # Order Type code
             cur_1.execute('SELECT code FROM Order_Type WHERE key = ? ', (randint(1, a),))
             order_type = cur_1.fetchone()[0]
@@ -60,18 +62,25 @@ class Stress_functions:
             station_code = cur_1.fetchone()[0]
             # Dish ID ident
             cur_1.execute('SELECT ident FROM Menu_Order WHERE key = ? ', (randint(1, d),))
-            dish_id = cur_1.fetchone()[0]
+            dish_id_1 = cur_1.fetchone()[0]
+            cur_1.execute('SELECT ident FROM Menu_Order WHERE key = ? ', (randint(1, d),))
+            dish_id_2 = cur_1.fetchone()[0]
+            cur_1.execute('SELECT ident FROM Menu_Order WHERE key = ? ', (randint(1, d),))
+            dish_id_3 = cur_1.fetchone()[0]
             # Currency code
-            cur_1.execute('SELECT code FROM Currencies WHERE key = ? ', (randint(1, e),))
+            cur_1.execute('SELECT ident FROM Currencies WHERE key = ? ', (randint(1, e),))
             currency = cur_1.fetchone()[0]
+            # Employees code
+            cur_1.execute('SELECT code FROM Employees WHERE key = ? ', (randint(1, f),))
+            employee_code = cur_1.fetchone()[0]
             # Quantity (умноженное на 1000, т.к. изначально передается в дробнй форме)
             qty = randint(1, 10) * 1000
 
             # время ожидания перед выполнением запроса
             time.sleep(int(hold_time))
             xml_request_string = '<?xml version="1.0" encoding="UTF-8"?><RK7Query><RK7CMD CMD="CreateOrder"><Order>' \
-                                 '<OrderType code= "' + str(order_type) + '" />' \
-                                 '<Table code= "' + str(table_code) + '" /></Order>''</RK7CMD></RK7Query>'
+                                 '<OrderType code= "' + str(order_type) + '" /><Waiter code="' + str(5046)+\
+                                 '"/><Table code= "' + str(table_code) + '" /></Order>''</RK7CMD></RK7Query>'
 
             ''' Проверим, ввел ли ли пользователь ip и порт, если нет - выдадим ошибку'''
             if not i and not p():
@@ -92,40 +101,50 @@ class Stress_functions:
                     xml_save_order = '<RK7Query><RK7CMD CMD="SaveOrder">' \
                                      '<Order visit="' + \
                                      str(visit_id) + '" orderIdent="256" /><Session><Station code="' + \
-                                     str(station_code) + '" /><Dish id="' + \
-                                     str(dish_id) + '" quantity="' + \
-                                     str(qty) + '"></Dish></Session></RK7CMD></RK7Query>'
+                                     str(station_code) + '" />' \
+                                     '<Dish id="' + str(dish_id_1) + '" quantity="' + str(qty) + '"></Dish>' \
+                                     '<Dish id="' + str(dish_id_2) + '" quantity="' + str(qty) + '"></Dish>' \
+                                     '<Dish id="' + str(dish_id_3) + '" quantity="' + str(qty) + '"></Dish>' \
+                                     '</Session></RK7CMD></RK7Query>'
 
                     xml_save_order_string = xml_save_order.encode('utf-8')
                     response_save_order = session.request(method='POST', url=ip_string_2, data=xml_save_order_string,
                                                           auth=(user_name, pass_word), verify=False)
-                    # Перекодируем response_save_order в нужную нам кодировку (кириллица поломана)
+                    #Перекодируем response_save_order в нужную нам кодировку (кириллица поломана)
                     response_save_order.encoding = 'UTF-8'
-                    #logging.debug(response_save_order.text)
-                    # Распарсим полученый ответ для того, чтобы получить GUID только что созданного заказа.
+                    logging.debug(response_save_order.text)
+                    #Распарсим полученый ответ для того, чтобы получить GUID только что созданного заказа.
                     parsed_guid_nodes = ET.fromstring(response_save_order.content)
-                    for item in parsed_guid_nodes.findall("./RK7QueryResult/Order"):
-                        guid = (item.attrib)
-                        print(guid)
-                        for item in parsed_guid_nodes.findall("./RK7QueryResult/Order/Creator"):
-                            creator = item[0][0].attrib
-                            # время ожидания перед оплатой
-                            time.sleep(int(pay_time))
-                            xml_pay_string = '<RK7Query><RK7CMD CMD="PayOrder"><Order guid="' + \
-                                             str(guid.get('guid')) + '"/><Cashier code="' + \
-                                             str(creator.get('basicSum')) + '"/><Station code="' + \
-                                             str(station_code) + '"/><Payment id="' + \
-                                             str(currency) + '" amount="' + str(guid.get('basicSum')) +\
-                                             '"/></RK7CMD></RK7Query>'
+                    parsed_guid = parsed_guid_nodes[0].attrib
+                    creator = parsed_guid_nodes[0][0].attrib
+                    # время ожидания перед оплатой
+                    time.sleep(int(pay_time))
 
-                            print(xml_pay_string)
+                    cur_1.execute('SELECT Count(key) FROM Currencies')
+                    e = cur_1.fetchone()[0]
+
+                    xml_pay_string = '<RK7Query><RK7CMD CMD="PayOrder"><Order guid="' + \
+                                     str(parsed_guid.get('guid')) + '"/><Cashier code="' + \
+                                     str(5046) + '"/><Station code="' + \
+                                     str(station_code) + '"/><Payment id="' + \
+                                     str(1) + '" amount="' + str(parsed_guid.get('basicSum')) +\
+                                     '"/></RK7CMD></RK7Query>'
+                    xml_pay_string = xml_pay_string.encode('utf-8')
+                    response_pay_order = session.request(method='POST', url=ip_string_2, data=xml_pay_string,
+                                                          auth=(user_name, pass_word), verify=False)
+
+                    parsed_pay_nodes = ET.fromstring(response_pay_order.content)
+                    parsed_pay_ok = parsed_pay_nodes.attrib
+                    status = parsed_pay_ok.get('Status')
+                    if status == 'Ok':
+                        count += 1
+                    response_pay_order.encoding = 'UTF-8'
+                    logging.debug(response_pay_order.text)
 
                 except OSError as e:
-                    error_log = CustomFunctions(root)
-                    error_log.connection_error_log(e)
+                    #error_log = CustomFunctions(root)
+                    #error_log.connection_error_log(e)
+                    logging.warning(e)
             times += 1
-            logging.debug('Orders created (%s)' % (times))
-        db.close()
-
-stress = Stress_functions()
-stress.start_testing('192.168.88.100','4545','Admin_QSR','190186','3','10','5')
+            logging.debug('Orders created "%s", Ok is "%s".' % (times, count))
+            db.close()
