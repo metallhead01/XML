@@ -10,18 +10,22 @@
 2. Добавить функцию поиска по выводу
 """
 
-from tab_2_requests import *
 import os
+import sys
+sys.path.append(os.path.join(sys.path[0], "modules"))
+import sqlite3
+import time
+import json
+import requests
+import xml.etree.ElementTree as ET
 from tkinter import *
 from tkinter import ttk
 from tkinter import filedialog
-import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
-import json
-from xml.dom import minidom
-import xml.etree.ElementTree as ET
 from custom_functions import *
 from time import strftime
+from tab_2_requests import *
+from xml.dom import minidom
 
 
 class Visual():
@@ -92,56 +96,26 @@ class Visual():
                     ''' Вставим полученные от парсера значения в поле "Тип заказа". Т.к. функция возвращает нам словарь,
                      выковырем значения с помощью стандартной функции .value и сконвертируем полученные значения в список'''
                     self.entry_xml_create_tab_2_arg1['values'] = list(collections_request.code_list_request\
-                    ('UNCHANGEABLEORDERTYPES', ip_add.get(), port.get(), id.get(), password.get()).values())
+                    ('UNCHANGEABLEORDERTYPES', ip_add.get(), port.get(), id.get(),password.get(),'Order_Type').values())
 
                     # Вставим полученные от парсера значения в поле "Код стола"
                     self.entry_xml_create_tab_2_arg2['values'] = list(collections_request.code_list_request\
-                    ('Tables', ip_add.get(), port.get(), id.get(), password.get()).values())
+                    ('Tables', ip_add.get(), port.get(), id.get(), password.get(), 'Tables').values())
 
                     # Вставим полученные от парсера значения в поле "Код станции"
                     self.entry_xml_create_tab_2_arg3['values'] = list(collections_request.code_list_request\
-                    ('Cashes', ip_add.get(), port.get(), id.get(), password.get()).values())
+                    ('Cashes', ip_add.get(), port.get(), id.get(), password.get(), 'Cashes').values())
 
                     self.entry_xml_create_tab_3_arg3['values'] = list(collections_request.code_list_request\
-                    ('Cashes', ip_add.get(), port.get(), id.get(), password.get()).values())
+                    ('Cashes', ip_add.get(), port.get(), id.get(), password.get(), 'Cashes').values())
 
                     # Вставим полученные от парсера значения в поле "Код валюты"
                     self.entry_xml_create_tab_3_arg4['values'] = list(collections_request.code_list_request\
-                    ('CURRENCIES', ip_add.get(), port.get(), id.get(), password.get()).values())
+                    ('CURRENCIES', ip_add.get(), port.get(), id.get(), password.get(), 'Currencies').values())
 
-                    ''' Собираем строку для отправки запроса. Для этого вызовем метод "code_list_request" для 
-                    объекта "collections_request". Этот метод нам понадобится для того, чтобы получить список кодов касс
-                     (нам нужена хотя бы одна - ее код нужен для создания запроса в поле StationCode)
-                    
-                    Аналогично верхним функциям, т.к. функция возвращает нам словарь, выковырем значения с помощью
-                    стандартной функции .value и сконвертируем полученные значения в список и затем с помощью [0]
-                    получим первый эелемент списка'''
-
-                    xml_request_string = '<RK7Query><RK7CMD CMD="GetOrderMenu" StationCode="' + \
-                    str(list(collections_request.code_list_request('Cashes', ip_add.get(), port.get(), id.get(),
-                    password.get()).values())[0]) + '" DateTime="' + strftime("%Y-%m-%d %H:%M:%S") + '" /></RK7Query>'
-
-                    ip_string = 'https://' + i + ":" + p + '/rk7api/v0/xmlinterface.xml'
-                    # Убираем warnings об SSL (warnings выводятся даже при отключении SSL)
-                    requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
-                    # Запрос с выключенным SSL
-                    response = session.request(method='GET', url=ip_string, data=xml_request_string,
-                                               auth=(id.get(), password.get()), verify=False)
-
-                    response_log = CustomFunctions(root)
-                    response_log.log_writing(response)
-
-                    # С помощью The ElementTree XML API делаем парсинг ответа из строки
-                    parsed_ident_nodes = ET.fromstring(response.content)
-                    # Перебираем все ноды "Item" в прямой дочерней ноде "Dishes"
-                    for item in parsed_ident_nodes.findall("./Dishes/Item"):
-                        # В переменную "attr_of_item_node" передаем значения всех атрибутов (2 штуки)
-                        attr_of_item_node = (item.attrib)
-                        # Раскладываем по спискам значения атрибутов
-                        idents.append(attr_of_item_node.get('Ident'))
-                        prices.append(attr_of_item_node.get('Prices'))
                     # Заполняем значения Combobox (см. кнопка "Запросить меню" во второй секции)
-                    self.entry_xml_create_tab_2_arg4['values'] = idents
+                    #self.entry_xml_create_tab_2_arg4['values'] = list(collections_request.menu_request\
+                    #(ip_add.get(), port.get(), id.get(), password.get()).values())
 
                 except requests.ConnectionError as e:
                     # Cоздадим объект для вывода ошибки в лог
@@ -365,9 +339,9 @@ class Visual():
         def create():
             xml_request_string = '<?xml version="1.0" encoding="UTF-8"?><RK7Query><RK7CMD CMD="CreateOrder"><Order>' \
                                  '<OrderType code= "' + str(self.entry_xml_create_tab_2_arg1.get()) + '" />' \
-                                 '<Table code= "' + str(self.entry_xml_create_tab_2_arg2.get()) + '" /></Order>' \
-                                 '</RK7CMD></RK7Query>'
-
+                                                                                                      '<Table code= "' + str(
+                self.entry_xml_create_tab_2_arg2.get()) + '" /></Order>' \
+                                                          '</RK7CMD></RK7Query>'
 
             i_2 = ip_add.get()
             p_2 = port.get()
@@ -421,7 +395,6 @@ class Visual():
                              str(self.entry_xml_create_tab_3_arg4.get()) + '" amount="' + \
                              str(self.entry_xml_create_tab_3_arg5.get()) + '"/></RK7CMD></RK7Query>'
             xml_pay_order_string = xml_pay_string.encode('utf-8')
-            # print(xml_pay_string)
             i_3 = ip_add.get()
             p_3 = port.get()
             ''' Проверим, ввел ли ли пользователь ip и порт, если нет - выдадим ошибку'''

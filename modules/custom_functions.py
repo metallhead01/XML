@@ -4,9 +4,10 @@ from sys import *
 from tkinter import messagebox
 import re
 import logging.config
+import logging
 
 # Указываю имя файла с настройками для внешнего редактирования
-logging.config.fileConfig('logging.ini')
+#logging.config.fileConfig('logging.ini')
 # Для вывода в файл
 logger = logging.getLogger('xmlParser')
 
@@ -14,9 +15,9 @@ logger = logging.getLogger('xmlParser')
 class CustomFunctions:
     def __init__(self, root):
         self.root = root
-
+	
     logging.basicConfig(level=logging.DEBUG)
-
+	
     def app_start(self):
         logger.info('Application Started')
 
@@ -24,7 +25,8 @@ class CustomFunctions:
         logger.info('Application Closed')
 
     def log_writing(self, response):
-        logger.info(response.text)
+        #logger.info('Null')
+        logger.info(response)
         #with open('log.txt', 'a', encoding='UTF-8') as log:
         #    log.write(
         #        strftime(
