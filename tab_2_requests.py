@@ -5,15 +5,10 @@ import logging.config
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 from time import strftime
 from custom_functions import *
-from random import randint
 
 
 logging.config.fileConfig('logging.ini')
 logger = logging.getLogger('tab2Requests')
-# Создали базу данных, если ее нет
-with open ('reference.db', 'a') as base:
-    logger.info('DB was created.')
-
 
 
 class Request:
@@ -21,105 +16,124 @@ class Request:
         self.root = root
 
         # Создаем соединение с нашей базой данных
-        self.db = sqlite3.connect('reference.db')
+        db = sqlite3.connect('reference.db')
 
         # Создаем курсор - это специальный объект который делает запросы и получает их результаты
-        self.cur = self.db.cursor()
+        cur = db.cursor()
 
         # Отчистим содержимое БД перед новым запросом
-        self.cur.execute('''DROP TABLE IF EXISTS Order_Type''')
-        self.cur.execute('''DROP TABLE IF EXISTS Tables''')
-        self.cur.execute('''DROP TABLE IF EXISTS Cashes''')
-        self.cur.execute('''DROP TABLE IF EXISTS Currencies''')
-        self.cur.execute('''DROP TABLE IF EXISTS Menu_Order''')
-        self.cur.execute('''DROP TABLE IF EXISTS Menu''')
-        self.cur.execute('''DROP TABLE IF EXISTS Employees''')
+        cur.execute('''DROP TABLE IF EXISTS Order_Type''')
+        cur.execute('''DROP TABLE IF EXISTS Tables''')
+        cur.execute('''DROP TABLE IF EXISTS Cashes''')
+        cur.execute('''DROP TABLE IF EXISTS Currencies''')
+        cur.execute('''DROP TABLE IF EXISTS Menu_Order''')
+        cur.execute('''DROP TABLE IF EXISTS Menu''')
+        cur.execute('''DROP TABLE IF EXISTS Employees''')
 
         logger.info('DB was cleared.')
 
         # Создаем таблицы в reference.db
-        self.cur.execute('''CREATE TABLE Order_Type ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, name TEXT, code INTEGER)''')
-        self.cur.execute('''CREATE TABLE Tables ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, name TEXT, code INTEGER)''')
-        self.cur.execute('''CREATE TABLE Cashes ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, name TEXT, code INTEGER)''')
-        self.cur.execute('''CREATE TABLE Currencies ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, name TEXT, ident INTEGER)''')
-        self.cur.execute('''CREATE TABLE Menu_Order ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, ident INTEGER, price INTEGER)''')
-        self.cur.execute('''CREATE TABLE Menu ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, ident INTEGER, name TEXT)''')
-        self.cur.execute('''CREATE TABLE Employees ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, code INTEGER, name TEXT)''')
+        cur.execute('''CREATE TABLE Order_Type ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, name TEXT, code INTEGER)''')
+        cur.execute('''CREATE TABLE Tables ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, name TEXT, code INTEGER)''')
+        cur.execute('''CREATE TABLE Cashes ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, name TEXT, code INTEGER)''')
+        cur.execute('''CREATE TABLE Currencies ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, name TEXT, ident INTEGER)''')
+        cur.execute('''CREATE TABLE Menu_Order ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, ident INTEGER, price INTEGER)''')
+        cur.execute('''CREATE TABLE Menu ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, ident INTEGER, name TEXT)''')
+        cur.execute('''CREATE TABLE Employees ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, code INTEGER, name TEXT)''')
 
-        self.db.close()
+        db.close()
 
         logger.info('New tables in DB were created.')
         logger.info('Here we go!!!')
 
     def code_list_request(self, string, i, p, user_name, pass_word, table):
+        self.string = string
+        self.i = i
+        self.p = p
+        self.user_name = user_name
+        self.pass_word = pass_word
+        self.table = table
         # Основное тело запроса
-        xml_request_string = '<RK7Query><RK7CMD CMD="GetRefData" RefName = "' + string + '"/></RK7Query>'
-        ip_string = 'https://' + i + ":" + p + '/rk7api/v0/xmlinterface.xml'
+        xml_request_string = '<RK7Query><RK7CMD CMD="GetRefData" RefName = "' + self.string + '"/></RK7Query>'
+        ip_string = 'https://' + self.i + ":" + self.p + '/rk7api/v0/xmlinterface.xml'
         requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
-        response = requests.get(ip_string, data=xml_request_string, auth=(user_name, pass_word), verify=False)
+        response = requests.get(ip_string, data=xml_request_string, auth=(self.user_name, self.pass_word), verify=False)
         parsed_element_list = ET.fromstring(response.content)
         # Создадим пустой словарь. В нем будем хранить пары "имя-код".
-        dict_name_code = {}
-        l_ist_code = []
-        l_ist_name = []
+        #dict_name_code = {}
+        #l_ist_code = []
+        #l_ist_name = []
+        db = sqlite3.connect('reference.db')
         for item in parsed_element_list.findall("./RK7Reference/Items/Item"):
             attr_of_item_node = (item.attrib)
             if attr_of_item_node.get('Status') == 'rsActive' and attr_of_item_node.get('ActiveHierarchy') == 'true':
-                l_ist_code.append(attr_of_item_node.get('Code'))
-                l_ist_name.append(attr_of_item_node.get('Name'))
+                #l_ist_code.append(attr_of_item_node.get('Code'))
+                #l_ist_name.append(attr_of_item_node.get('Name'))
                 # Делаем запрос в DB - переменные в запросе отображаем через: "{}" - для переменной таблицы и
                 # "?" - для переменных значений.
-                self.db = sqlite3.connect('reference.db')
-                self.cur = self.db.cursor()
-                self.cur.execute('''INSERT INTO {} (name, code) VALUES (?, ?)'''.format(table), (attr_of_item_node.get('Name'), attr_of_item_node.get('Code')))
+                cur = db.cursor()
+                cur.execute('''INSERT INTO {} (name, code) VALUES (?, ?)'''.format(self.table), (attr_of_item_node.get('Name'), attr_of_item_node.get('Code')))
                 logger.debug('Transaction to "%s" table is completed.' % (attr_of_item_node.get('Name')))
                 # Собирем словарь из двух списков - l_ist_name будут ключами, l_ist_code - значениями.
-                dict_name_code = dict(zip(l_ist_name, l_ist_code))
-                self.db.commit()
-                self.db.close()
+                #dict_name_code = dict(zip(l_ist_name, l_ist_code))
+                cur.close()
+        db.commit()
+        db.close()
 
         # Функция вернула словарь
-        return dict_name_code
+        #return dict_name_code
 
     def currencies_list_request(self, string, i, p, user_name, pass_word, table):
+        self.string = string
+        self.i = i
+        self.p = p
+        self.user_name = user_name
+        self.pass_word = pass_word
+        self.table = table
         # Основное тело запроса
-        xml_request_string = '<RK7Query><RK7CMD CMD="GetRefData" RefName = "' + string + '"/></RK7Query>'
-        ip_string = 'https://' + i + ":" + p + '/rk7api/v0/xmlinterface.xml'
+        xml_request_string = '<RK7Query><RK7CMD CMD="GetRefData" RefName = "' + self.string + '"/></RK7Query>'
+        ip_string = 'https://' + self.i + ":" + self.p + '/rk7api/v0/xmlinterface.xml'
         requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
-        response = requests.get(ip_string, data=xml_request_string, auth=(user_name, pass_word), verify=False)
+        response = requests.get(ip_string, data=xml_request_string, auth=(self.user_name, self.pass_word), verify=False)
         parsed_element_list = ET.fromstring(response.content)
         # Создадим пустой словарь. В нем будем хранить пары "имя-код".
-        dict_name_code = {}
-        l_ist_code = []
-        l_ist_name = []
+        #dict_name_code = {}
+        #l_ist_code = []
+        #l_ist_name = []
+        db = sqlite3.connect('reference.db')
+        cur = db.cursor()
         for item in parsed_element_list.findall("./RK7Reference/Items/Item"):
             attr_of_item_node = (item.attrib)
             if attr_of_item_node.get('Status') == 'rsActive' and attr_of_item_node.get('ActiveHierarchy') == 'true':
-                l_ist_code.append(attr_of_item_node.get('Ident'))
-                l_ist_name.append(attr_of_item_node.get('Name'))
+                #l_ist_code.append(attr_of_item_node.get('Ident'))
+                #l_ist_name.append(attr_of_item_node.get('Name'))
                 # Делаем запрос в DB - переменные в запросе отображаем через: "{}" - для переменной таблицы и
                 # "?" - для переменных значений.
-                self.db = sqlite3.connect('reference.db')
-                self.cur = self.db.cursor()
-                self.cur.execute('''INSERT INTO {} (name, ident) VALUES (?, ?)'''.format(table), (attr_of_item_node.get('Name'), attr_of_item_node.get('Ident')))
-                logger.debug('Transaction to "%s" table is completed.' % (attr_of_item_node.get('Name')))
+                cur.execute('''INSERT INTO {} (name, ident) VALUES (?, ?)'''.format(self.table), (attr_of_item_node.get('Name'), attr_of_item_node.get('Ident')))
+                logger.debug('Transaction of "%s" item is completed.' % (attr_of_item_node.get('Name')))
                 # Собирем словарь из двух списков - l_ist_name будут ключами, l_ist_code - значениями.
-                dict_name_code = dict(zip(l_ist_name, l_ist_code))
-                self.db.commit()
-                self.db.close()
-
+                #dict_name_code = dict(zip(l_ist_name, l_ist_code))
+        db.commit()
+        cur.close()
+        db.close()
     def menu_request(self, i, p, user_name, pass_word):
+        self.i = i
+        self.p = p
+        self.user_name = user_name
+        self.pass_word = pass_word
         session = requests.session()
-        get_order_menu_ident = []
-        full_menu_ident = []
-        prices = []
-        names = []
-        dict_ident_price = {}
-        dict_name_ident = {}
-        self.db = sqlite3.connect('reference.db')
-        self.cur = self.db.cursor()
-        self.cur.execute('''SELECT code FROM Cashes''')
-
+        #get_order_menu_ident = []
+        #full_menu_ident = []
+        #prices = []
+        #names = []
+        #dict_ident_price = {}
+        #dict_name_ident = {}
+        db = sqlite3.connect('reference.db')
+        cur = db.cursor()
+        cur.execute('''SELECT code FROM Cashes''')
+        # Сформируем переменную для запроса. Почему-то отвалилась конвертация в самом теле запроса, пришлось выделять в
+        # отдельную переменную.
+        a = str(cur.fetchone()[0])
 
         ''' Собираем строку для отправки запроса. Для этого вызовем метод "code_list_request" для 
         объекта "collections_request". Этот метод нам понадобится для того, чтобы получить список кодов касс
@@ -129,21 +143,20 @@ class Request:
         стандартной функции .value и сконвертируем полученные значения в список и затем с помощью [0]
         получим первый эелемент списка'''
 
-        xml_request_string = \
-        '<RK7Query><RK7CMD CMD="GetOrderMenu" StationCode="' + str(self.cur.fetchone()[0]) + '" DateTime="' +\
-        strftime("%Y-%m-%d %H:%M:%S") + '" /></RK7Query>'
-        self.db.close()
+        xml_request_string = '<RK7Query><RK7CMD CMD="GetOrderMenu" StationCode="' + a + '" DateTime="' + strftime("%Y-%m-%d %H:%M:%S") + '" /></RK7Query>'
+        print(xml_request_string)
+        cur.close()
 
         # Делаю запрос всех элементов меню (нужен для получения меню). В дальнейшем будет использоваться для
         # сравнения с запросом "GetRefData".
         xml_request_string_full_menu = '<RK7Query><RK7CMD CMD="GetRefData" RefName = "MENUITEMS"/></RK7Query>'
 
-        ip_string = 'https://' + i + ":" + p + '/rk7api/v0/xmlinterface.xml'
+        ip_string = 'https://' + self.i + ":" + self.p + '/rk7api/v0/xmlinterface.xml'
         # Убираем warnings об SSL (warnings выводятся даже при отключении SSL)
         requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
         # Запрос с выключенным SSL
         response = session.request(method='GET', url=ip_string, data=xml_request_string,
-                                   auth=(user_name, pass_word), verify=False)
+                                   auth=(self.user_name, self.pass_word), verify=False)
 
         parsed_ident_nodes = ET.fromstring(response.content)
         # Перебираем все ноды "Item" в прямой дочерней ноде "Dishes"
@@ -151,36 +164,35 @@ class Request:
             # В переменную "attr_of_item_node" передаем значения всех атрибутов (2 штуки)
             attr_of_item_node = (item.attrib)
             # Раскладываем по спискам значения атрибутов
-            get_order_menu_ident.append(attr_of_item_node.get('Ident'))
-            prices.append(attr_of_item_node.get('Price'))
-            self.db = sqlite3.connect('reference.db')
-            self.cur = self.db.cursor()
-            self.cur.execute('''INSERT INTO Menu_Order (ident, price) VALUES (?, ?)''',
+            #get_order_menu_ident.append(attr_of_item_node.get('Ident'))
+            #prices.append(attr_of_item_node.get('Price'))
+            cur = db.cursor()
+            cur.execute('''INSERT INTO Menu_Order (ident, price) VALUES (?, ?)''',
                              (attr_of_item_node.get('Ident'), attr_of_item_node.get('Price')))
-            self.db.commit()
-            self.db.close()
             logger.debug('Transaction of "%s" ident is completed.' % (attr_of_item_node.get('Ident')))
-            dict_ident_price = dict(zip(get_order_menu_ident, prices))
+        db.commit()
+        cur.close()
+            #dict_ident_price = dict(zip(get_order_menu_ident, prices))
 
         # Делаем запрос полного меню
         response_menu = session.request(method='GET', url=ip_string, data=xml_request_string_full_menu,
-                                   auth=(user_name, pass_word), verify=False)
+                                   auth=(self.user_name, self.pass_word), verify=False)
         logger.info(response)
         # С помощью The ElementTree XML API делаем парсинг ответа из строки
         parsed_full_menu = ET.fromstring(response_menu.content)
         for item in parsed_full_menu.findall("./RK7Reference/Items/Item"):
             attr_of_item_node = (item.attrib)
             if attr_of_item_node.get('Status') == 'rsActive' and attr_of_item_node.get('ActiveHierarchy') == 'true':
-                full_menu_ident.append(attr_of_item_node.get('Ident'))
-                names.append(attr_of_item_node.get('Name'))
-                dict_name_ident = dict(zip(full_menu_ident, names))
-                self.db = sqlite3.connect('reference.db')
-                self.cur = self.db.cursor()
+                #full_menu_ident.append(attr_of_item_node.get('Ident'))
+                #names.append(attr_of_item_node.get('Name'))
+                #dict_name_ident = dict(zip(full_menu_ident, names))
+                cur = db.cursor()
                 # Наполним таблицу DB значениями
-                self.cur.execute('''INSERT INTO Menu (name, ident) VALUES (?, ?)''',
-                (attr_of_item_node.get('Name'), attr_of_item_node.get('Ident')))
-                self.db.commit()
+                cur.execute('''INSERT INTO Menu (name, ident) VALUES (?, ?)''',
+                            (attr_of_item_node.get('Name'), attr_of_item_node.get('Ident')))
                 logger.info('Transaction of "%s" item is completed.' % (attr_of_item_node.get('Name')))
-                self.db.close()
+        db.commit()
+        cur.close()
+        db.close()
         #comparing_result = list(set(get_order_menu_ident) & set(full_menu_ident))
-        return get_order_menu_ident
+        #return get_order_menu_ident

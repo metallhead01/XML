@@ -10,9 +10,9 @@
 2. Добавить функцию поиска по выводу
 """
 
-import os
 import sys
-#sys.path.append(os.path.join(sys.path[0], "modules"))
+import os
+# sys.path.append(os.path.join(sys.path[0], "modules"))
 import sqlite3
 import time
 import json
@@ -30,16 +30,15 @@ from xml.dom import minidom
 from stress_functions import *
 
 
-class Visual():
+class Visual:
     def __init__(self, root):
         self.root = root
-        self.version = '1.4.2'
+        version = '1.4.2'
 
-        starting_log = CustomFunctions(root)
+        starting_log = CustomFunctions(self.root)
         starting_log.app_start()
 
-
-        root.title("XML Parser v." + self.version)
+        self.root.title("XML Parser v." + version)
 
         '''Добавляем функцию для сборки. В ней две ветки - try: функция проверяет используется ли frozen-режим (режимо
         одного .exe или обычное выполнение скрипта. Если интерпритатор видит, что метод "_MEIPASS" отсутствует (а он 
@@ -57,7 +56,7 @@ class Visual():
         GetWaiterList = 'GetRefData" RefName = "EMPLOYEES'
         '''Задаем переменную для обработки пути с картинкой'''
         icon = resource_path(r'images\7.ico')
-        root.iconbitmap(icon)
+        self.root.iconbitmap(icon)
 
         '''Зададим размер и положение экрана в зависимости от размера экрана пользователя'''
         # root.geometry("900x700+500+600")
@@ -65,8 +64,8 @@ class Visual():
         h = 800  # height for the Tk root
 
         # get screen width and height
-        ws = root.winfo_screenwidth()  # width of the screen
-        hs = root.winfo_screenheight()  # height of the screen
+        ws = self.root.winfo_screenwidth()  # width of the screen
+        hs = self.root.winfo_screenheight()  # height of the screen
 
         # calculate x and y coordinates for the Tk root window
         x = (ws / 2) - (w / 2)
@@ -74,8 +73,8 @@ class Visual():
 
         # set the dimensions of the screen
         # and where it is placed
-        root.geometry('%dx%d+%d+%d' % (w, h, x, y))
-        root.bind('<Escape>', lambda e: root.destroy())
+        self.root.geometry('%dx%d+%d+%d' % (w, h, x, y))
+        self.root.bind('<Escape>', lambda e: self.root.destroy())
 
         # Используем установку сессий для keep-alive подключений вместо единомоментных вызовов (Use session for keep-
         # alive connections).
@@ -84,46 +83,66 @@ class Visual():
         def collections_call():
             i = ip_add.get()
             p = port.get()
-            idents = []
-            prices = []
             ''' Проверим, ввел ли ли пользователь ip и порт, если нет - выдадим ошибку'''
             if not i and not p:
                 messagebox.showwarning(title='Error', message="Введите IP-адрес и порт!")
             else:
+                # Обрабатываем исключение на предмет  недоступности сервера и неверных значений логина и пароля
+                error_log = CustomFunctions(root)
                 try:
+                    # Сделаем простой запрос - "GetRefList" для проверки логина и пароля. Если сервер вернет
+                    # "401 Unauthorized" - логин или пароль неверен
+                    xml_request_string = '<RK7Query><RK7CMD CMD="GetRefList"/></RK7Query>'
+                    ip_string = 'https://' + ip_add.get() + ":" + port.get() + '/rk7api/v0/xmlinterface.xml'
+                    requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+                    response = requests.get(ip_string, data=xml_request_string, auth=(id.get(), password.get()),
+                                            verify=False)
+                    # Если сервер доступен, смотрим на ответ запроса "GetRefList"
+                    # Если в ответе от сервера есть строка "401 Unauthorized", поднимаем исключение
+                    if response.text == '<HTML><BODY><B>401 Unauthorized</B></BODY></HTML>':
+                        raise NameError('Login or password is incorrect!')
+                except requests.ConnectionError as e:
+                    error_log.connection_error_log(e)
+                except NameError:
+                    messagebox.showerror(title='Connection error', message='Login or password is incorrect!')
+                    error_log.warning_log_writing('Login or password is incorrect.')
+                # Если такой строки нет - продолжаем выполнение функции
+                else:
                     ''' Создадим экземпляр класса Request для парсинга запросов и будем применять метод
                     "code_list_request" для каждого нужного нам запроса - делаем запрос к серверу, получаем список
                     коллекций по имени переменной (столы, валюты и т.д.) и вставляем их в поля GUI'''
                     collections_request = Request(root)
                     ''' Вставим полученные от парсера значения в поле "Тип заказа". Т.к. функция возвращает нам словарь,
                      выковырем значения с помощью стандартной функции .value и сконвертируем полученные значения в список'''
-                    #self.entry_xml_create_tab_2_arg1['values'] = list(collections_request.code_list_request\
-                    #('UNCHANGEABLEORDERTYPES', ip_add.get(), port.get(), id.get(),password.get(),'Order_Type').values())
+                    # self.entry_xml_create_tab_2_arg1['values'] = list(collections_request.code_list_request\
+                    # ('UNCHANGEABLEORDERTYPES', ip_add.get(), port.get(), id.get(),password.get(),'Order_Type').values())
 
-                    collections_request.code_list_request('UNCHANGEABLEORDERTYPES', ip_add.get(), port.get(), id.get(),password.get(),'Order_Type')
+                    collections_request.code_list_request('UNCHANGEABLEORDERTYPES', ip_add.get(), port.get(),
+                                                          id.get(), password.get(), 'Order_Type')
 
                     # Вставим полученные от парсера значения в поле "Код стола"
-                    collections_request.code_list_request('Tables', ip_add.get(), port.get(), id.get(), password.get(),'Tables')
+                    collections_request.code_list_request('Tables', ip_add.get(), port.get(), id.get(),
+                                                          password.get(), 'Tables')
 
                     # Вставим полученные от парсера значения в поле "Код станции"
-                    collections_request.code_list_request('Cashes', ip_add.get(), port.get(), id.get(), password.get(),'Cashes')
+                    collections_request.code_list_request('Cashes', ip_add.get(), port.get(), id.get(),
+                                                          password.get(), 'Cashes')
 
                     # collections_request.code_list_request('Cashes', ip_add.get(), port.get(), id.get(), password.get(), 'Cashes')
 
                     # Вставим полученные от парсера значения в поле "Код валюты"
-                    collections_request.currencies_list_request('CURRENCIES', ip_add.get(), port.get(), id.get(), password.get(),'Currencies')
+                    collections_request.currencies_list_request('CURRENCIES', ip_add.get(), port.get(),
+                                                                id.get(), password.get(), 'Currencies')
 
-                    collections_request.code_list_request('Employees', ip_add.get(), port.get(), id.get(), password.get(),'Employees')
+                    collections_request.code_list_request('Employees', ip_add.get(), port.get(), id.get(),
+                                                          password.get(), 'Employees')
 
                     collections_request.menu_request(ip_add.get(), port.get(), id.get(), password.get())
                     # Заполняем значения Combobox (см. кнопка "Запросить меню" во второй секции)
-                    #self.entry_xml_create_tab_2_arg4['values'] = list(collections_request.menu_request\
-                    #(ip_add.get(), port.get(), id.get(), password.get()).values())
-
-                except requests.ConnectionError as e:
-                    # Cоздадим объект для вывода ошибки в лог
-                    error_log = CustomFunctions(root)
-                    error_log.connection_error_log(e)
+                    # self.entry_xml_create_tab_2_arg4['values'] = list(collections_request.menu_request\
+                    # (ip_add.get(), port.get(), id.get(), password.get()).values())
+                    db_ok = CustomFunctions(root)
+                    db_ok.log_writing('Ok. All references are loaded to DB')
 
         def open_file():
             try:
@@ -306,14 +325,15 @@ class Visual():
 
 
                     elif a1 == 'GetRefData" RefName="Restaurants" IgnoreEnums="1" WithChildItems="3" WithMacroProp="1" ' \
-                     'OnlyActive = "1" PropMask="RIChildItems.(Ident,Name,genRestIP,genprnStation,' \
-                     'genDefDlvCurrency,AltName,RIChildItems.TRole(ItemIdent,passdata,Name,AltName,gen*,' \
-                     'RIChildItems.(Code,Ident,Name,AltName,gen*)))':
+                               'OnlyActive = "1" PropMask="RIChildItems.(Ident,Name,genRestIP,genprnStation,' \
+                               'genDefDlvCurrency,AltName,RIChildItems.TRole(ItemIdent,passdata,Name,AltName,gen*,' \
+                               'RIChildItems.(Code,Ident,Name,AltName,gen*)))':
                         self.text_field.delete(1.0, END)
                         parsed_waiter_nodes = ET.fromstring(response.content)
                         for item in parsed_waiter_nodes.findall("./RK7Reference/RIChildItems/TRK7Restaurant"):
                             restaurant = (item.attrib)
-                            for item in parsed_waiter_nodes.findall("./RK7Reference/RIChildItems/TRK7Restaurant/RIChildItems/TRole"):
+                            for item in parsed_waiter_nodes.findall(
+                                    "./RK7Reference/RIChildItems/TRK7Restaurant/RIChildItems/TRole"):
                                 role = item.attrib
                                 waiter = item[0][0].attrib
                                 self.text_field.insert(1.0, ("Ресторан = " +
@@ -342,8 +362,9 @@ class Visual():
         def create():
             xml_request_string = '<?xml version="1.0" encoding="UTF-8"?><RK7Query><RK7CMD CMD="CreateOrder"><Order>' \
                                  '<OrderType code= "' + str(self.entry_xml_create_tab_2_arg1.get()) + '" />' \
-                                 '<Table code= "' + str(self.entry_xml_create_tab_2_arg2.get()) + '" />' \
-                                 '</Order>''</RK7CMD></RK7Query>'
+                                                                                                      '<Table code= "' + str(
+                self.entry_xml_create_tab_2_arg2.get()) + '" />' \
+                                                          '</Order>''</RK7CMD></RK7Query>'
 
             i_2 = ip_add.get()
             p_2 = port.get()
@@ -425,8 +446,8 @@ class Visual():
 
         def test():
             start_test = Stress_functions()
-            start_test.start_testing(ip_add.get(), port.get(), id.get(),password.get(), xml_arg1_tab_4.get(),
-            xml_arg2_tab_4.get(), xml_arg3_tab_4.get())
+            start_test.start_testing(ip_add.get(), port.get(), id.get(), password.get(), xml_arg1_tab_4.get(),
+                                     xml_arg2_tab_4.get(), xml_arg3_tab_4.get())
 
         '''Объявили переменные для полей'''
 
@@ -460,9 +481,9 @@ class Visual():
         '''Создали строку меню'''
 
         # Выключили старый стиль меню
-        root.option_add('*tearOff', False)
-        self.menubar = Menu(root)
-        root.configure(menu=self.menubar)
+        self.root.option_add('*tearOff', False)
+        self.menubar = Menu(self.root)
+        self.root.configure(menu=self.menubar)
         self.file = Menu(self.menubar)
 
         '''Добавили надписи в меню'''
@@ -478,7 +499,7 @@ class Visual():
 
         '''Создали вкладки'''
 
-        self.tab_1 = ttk.Notebook(root, height=600, width=850)
+        self.tab_1 = ttk.Notebook(self.root, height=600, width=850)
         self.tab_1.place(x=15, y=15)
 
         '''Создали frame'''
@@ -656,15 +677,15 @@ class Visual():
         self.entry_xml_create_tab_4_arg3 = ttk.Entry(self.frame_4, width=20, textvariable=xml_arg3_tab_4)
         self.entry_xml_create_tab_4_arg3.place(x=15, y=205)
         # Код блюда (Combobox)
-        #self.label_xml_create_tab_4_arg4 = Label(self.frame_4, text='Код блюда').place(x=15, y=228)
-        #self.entry_xml_create_tab_4_arg4 = ttk.Combobox(self.frame_4, textvariable=xml_arg4_tab_2,
-         #                                               width=17, state='readonly')
-        #self.entry_xml_create_tab_4_arg4.place(x=15, y=250)
+        # self.label_xml_create_tab_4_arg4 = Label(self.frame_4, text='Код блюда').place(x=15, y=228)
+        # self.entry_xml_create_tab_4_arg4 = ttk.Combobox(self.frame_4, textvariable=xml_arg4_tab_2,
+        #                                               width=17, state='readonly')
+        # self.entry_xml_create_tab_4_arg4.place(x=15, y=250)
 
         # Количество блюда
-        #self.label_xml_create_tab_4_arg5 = Label(self.frame_4, text='Количество блюд').place(x=15, y=272)
-        #self.entry_xml_create_tab_4_arg5 = ttk.Entry(self.frame_4, width=20, textvariable=xml_arg5_tab_2)
-        #self.entry_xml_create_tab_4_arg5.place(x=15, y=295)
+        # self.label_xml_create_tab_4_arg5 = Label(self.frame_4, text='Количество блюд').place(x=15, y=272)
+        # self.entry_xml_create_tab_4_arg5 = ttk.Entry(self.frame_4, width=20, textvariable=xml_arg5_tab_2)
+        # self.entry_xml_create_tab_4_arg5.place(x=15, y=295)
 
         # Поле текста 4
         self.text_field_tab_4 = Text(self.frame_4, height=25, width=70, wrap=WORD, relief=SOLID)
