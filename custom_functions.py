@@ -27,10 +27,6 @@ class CustomFunctions:
     def log_writing(self, response):
         self.response = response
         logger.info(self.response)
-        #with open('log.txt', 'a', encoding='UTF-8') as log:
-        #    log.write(
-        #        strftime(
-        #            str("%H:%M:%S %Y-%m-%d") + ' ' + str(response.content) + '\n'))
 
     def connection_error_log(self, e):
         self.e = e

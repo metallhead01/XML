@@ -59,29 +59,18 @@ class Request:
         requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
         response = requests.get(ip_string, data=xml_request_string, auth=(self.user_name, self.pass_word), verify=False)
         parsed_element_list = ET.fromstring(response.content)
-        # Создадим пустой словарь. В нем будем хранить пары "имя-код".
-        #dict_name_code = {}
-        #l_ist_code = []
-        #l_ist_name = []
         db = sqlite3.connect('reference.db')
         for item in parsed_element_list.findall("./RK7Reference/Items/Item"):
             attr_of_item_node = (item.attrib)
             if attr_of_item_node.get('Status') == 'rsActive' and attr_of_item_node.get('ActiveHierarchy') == 'true':
-                #l_ist_code.append(attr_of_item_node.get('Code'))
-                #l_ist_name.append(attr_of_item_node.get('Name'))
                 # Делаем запрос в DB - переменные в запросе отображаем через: "{}" - для переменной таблицы и
                 # "?" - для переменных значений.
                 cur = db.cursor()
                 cur.execute('''INSERT INTO {} (name, code) VALUES (?, ?)'''.format(self.table), (attr_of_item_node.get('Name'), attr_of_item_node.get('Code')))
                 logger.debug('Transaction to "%s" table is completed.' % (attr_of_item_node.get('Name')))
-                # Собирем словарь из двух списков - l_ist_name будут ключами, l_ist_code - значениями.
-                #dict_name_code = dict(zip(l_ist_name, l_ist_code))
                 cur.close()
         db.commit()
         db.close()
-
-        # Функция вернула словарь
-        #return dict_name_code
 
     def currencies_list_request(self, string, i, p, user_name, pass_word, table):
         self.string = string
@@ -96,23 +85,15 @@ class Request:
         requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
         response = requests.get(ip_string, data=xml_request_string, auth=(self.user_name, self.pass_word), verify=False)
         parsed_element_list = ET.fromstring(response.content)
-        # Создадим пустой словарь. В нем будем хранить пары "имя-код".
-        #dict_name_code = {}
-        #l_ist_code = []
-        #l_ist_name = []
         db = sqlite3.connect('reference.db')
         cur = db.cursor()
         for item in parsed_element_list.findall("./RK7Reference/Items/Item"):
             attr_of_item_node = (item.attrib)
             if attr_of_item_node.get('Status') == 'rsActive' and attr_of_item_node.get('ActiveHierarchy') == 'true':
-                #l_ist_code.append(attr_of_item_node.get('Ident'))
-                #l_ist_name.append(attr_of_item_node.get('Name'))
                 # Делаем запрос в DB - переменные в запросе отображаем через: "{}" - для переменной таблицы и
                 # "?" - для переменных значений.
                 cur.execute('''INSERT INTO {} (name, ident) VALUES (?, ?)'''.format(self.table), (attr_of_item_node.get('Name'), attr_of_item_node.get('Ident')))
                 logger.debug('Transaction of "%s" item is completed.' % (attr_of_item_node.get('Name')))
-                # Собирем словарь из двух списков - l_ist_name будут ключами, l_ist_code - значениями.
-                #dict_name_code = dict(zip(l_ist_name, l_ist_code))
         db.commit()
         cur.close()
         db.close()
@@ -122,12 +103,6 @@ class Request:
         self.user_name = user_name
         self.pass_word = pass_word
         session = requests.session()
-        #get_order_menu_ident = []
-        #full_menu_ident = []
-        #prices = []
-        #names = []
-        #dict_ident_price = {}
-        #dict_name_ident = {}
         db = sqlite3.connect('reference.db')
         cur = db.cursor()
         cur.execute('''SELECT code FROM Cashes''')
@@ -163,16 +138,12 @@ class Request:
         for item in parsed_ident_nodes.findall("./Dishes/Item"):
             # В переменную "attr_of_item_node" передаем значения всех атрибутов (2 штуки)
             attr_of_item_node = (item.attrib)
-            # Раскладываем по спискам значения атрибутов
-            #get_order_menu_ident.append(attr_of_item_node.get('Ident'))
-            #prices.append(attr_of_item_node.get('Price'))
             cur = db.cursor()
             cur.execute('''INSERT INTO Menu_Order (ident, price) VALUES (?, ?)''',
                              (attr_of_item_node.get('Ident'), attr_of_item_node.get('Price')))
             logger.debug('Transaction of "%s" ident is completed.' % (attr_of_item_node.get('Ident')))
         db.commit()
         cur.close()
-            #dict_ident_price = dict(zip(get_order_menu_ident, prices))
 
         # Делаем запрос полного меню
         response_menu = session.request(method='GET', url=ip_string, data=xml_request_string_full_menu,
@@ -183,9 +154,6 @@ class Request:
         for item in parsed_full_menu.findall("./RK7Reference/Items/Item"):
             attr_of_item_node = (item.attrib)
             if attr_of_item_node.get('Status') == 'rsActive' and attr_of_item_node.get('ActiveHierarchy') == 'true':
-                #full_menu_ident.append(attr_of_item_node.get('Ident'))
-                #names.append(attr_of_item_node.get('Name'))
-                #dict_name_ident = dict(zip(full_menu_ident, names))
                 cur = db.cursor()
                 # Наполним таблицу DB значениями
                 cur.execute('''INSERT INTO Menu (name, ident) VALUES (?, ?)''',
@@ -194,5 +162,3 @@ class Request:
         db.commit()
         cur.close()
         db.close()
-        #comparing_result = list(set(get_order_menu_ident) & set(full_menu_ident))
-        #return get_order_menu_ident
