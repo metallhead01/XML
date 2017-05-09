@@ -5,6 +5,8 @@ from tkinter import messagebox
 import re
 import logging.config
 import logging
+import sqlite3
+import time
 
 # Указываю имя файла с настройками для внешнего редактирования
 logging.config.fileConfig('logging.ini')
@@ -59,3 +61,15 @@ class CustomFunctions:
     def wrong_login_pass(self, response):
         self.response = response
         logger.debug(self.response)
+
+class mycursor(sqlite3.Cursor):
+    def execute(self, *args, **kwargs):
+        timestart = time.clock()
+        query = super(mycursor, self).execute(*args, **kwargs)
+        idle = time.clock() - timestart
+        if idle >= 0.1:
+            file = open("sqlite_slow_request.log", "a+")
+            file.write(*args)
+            file.write("    IDLE = " + str(idle) + "\n")
+            file.close()
+        return query

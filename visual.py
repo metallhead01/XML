@@ -113,31 +113,33 @@ class Visual:
                     коллекций по имени переменной (столы, валюты и т.д.) и вставляем их в поля GUI'''
                     collections_request = Request(root)
                     ''' Вставим полученные от парсера значения в поле "Тип заказа". Т.к. функция возвращает нам словарь,
-                     выковырем значения с помощью стандартной функции .value и сконвертируем полученные значения в список'''
+                     выковырем значения с помощью стандартной функции .value и сконвертируем полученные значения в
+                     список'''
                     # self.entry_xml_create_tab_2_arg1['values'] = list(collections_request.code_list_request\
                     # ('UNCHANGEABLEORDERTYPES', ip_add.get(), port.get(), id.get(),password.get(),'Order_Type').values())
 
-                    collections_request.code_list_request('UNCHANGEABLEORDERTYPES', ip_add.get(), port.get(),
+                    collections_request.collections_list_request('UNCHANGEABLEORDERTYPES', ip_add.get(), port.get(),
                                                           id.get(), password.get(), 'Order_Type')
 
                     # Вставим полученные от парсера значения в поле "Код стола"
-                    collections_request.code_list_request('Tables', ip_add.get(), port.get(), id.get(),
+                    collections_request.collections_list_request('Tables', ip_add.get(), port.get(), id.get(),
                                                           password.get(), 'Tables')
 
                     # Вставим полученные от парсера значения в поле "Код станции"
-                    collections_request.code_list_request('Cashes', ip_add.get(), port.get(), id.get(),
+                    collections_request.collections_list_request('Cashes', ip_add.get(), port.get(), id.get(),
                                                           password.get(), 'Cashes')
 
-                    # collections_request.code_list_request('Cashes', ip_add.get(), port.get(), id.get(), password.get(), 'Cashes')
+                    collections_request.collections_list_request('Employees', ip_add.get(), port.get(), id.get(),
+                                                                 password.get(), 'Employees')
 
                     # Вставим полученные от парсера значения в поле "Код валюты"
-                    collections_request.currencies_list_request('CURRENCIES', ip_add.get(), port.get(),
-                                                                id.get(), password.get(), 'Currencies')
-
-                    collections_request.code_list_request('Employees', ip_add.get(), port.get(), id.get(),
-                                                          password.get(), 'Employees')
+                    collections_request.currencies_list_request('CURRENCIES', ip_add.get(), port.get(), id.get(),
+                                                                password.get(), 'Currencies')
 
                     collections_request.menu_request(ip_add.get(), port.get(), id.get(), password.get())
+
+                    collections_request.order_list_request(ip_add.get(), port.get(), id.get(), password.get())
+
                     # Заполняем значения Combobox (см. кнопка "Запросить меню" во второй секции)
                     # self.entry_xml_create_tab_2_arg4['values'] = list(collections_request.menu_request\
                     # (ip_add.get(), port.get(), id.get(), password.get()).values())

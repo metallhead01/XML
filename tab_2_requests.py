@@ -19,16 +19,18 @@ class Request:
         db = sqlite3.connect('reference.db')
 
         # Создаем курсор - это специальный объект который делает запросы и получает их результаты
-        cur = db.cursor()
+        cur = db.cursor(mycursor)
 
         # Отчистим содержимое БД перед новым запросом
         cur.execute('''DROP TABLE IF EXISTS Order_Type''')
         cur.execute('''DROP TABLE IF EXISTS Tables''')
         cur.execute('''DROP TABLE IF EXISTS Cashes''')
+        cur.execute('''DROP TABLE IF EXISTS Employees''')
         cur.execute('''DROP TABLE IF EXISTS Currencies''')
         cur.execute('''DROP TABLE IF EXISTS Menu_Order''')
         cur.execute('''DROP TABLE IF EXISTS Menu''')
-        cur.execute('''DROP TABLE IF EXISTS Employees''')
+        cur.execute('''DROP TABLE IF EXISTS Orders''')
+        cur.execute('''DROP TABLE IF EXISTS Visits''')
 
         logger.info('DB was cleared.')
 
@@ -36,17 +38,20 @@ class Request:
         cur.execute('''CREATE TABLE Order_Type ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, name TEXT, code INTEGER)''')
         cur.execute('''CREATE TABLE Tables ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, name TEXT, code INTEGER)''')
         cur.execute('''CREATE TABLE Cashes ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, name TEXT, code INTEGER)''')
+        cur.execute('''CREATE TABLE Employees ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, code INTEGER, name TEXT)''')
         cur.execute('''CREATE TABLE Currencies ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, name TEXT, ident INTEGER)''')
         cur.execute('''CREATE TABLE Menu_Order ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, ident INTEGER, price INTEGER)''')
         cur.execute('''CREATE TABLE Menu ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, ident INTEGER, name TEXT)''')
-        cur.execute('''CREATE TABLE Employees ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, code INTEGER, name TEXT)''')
+        cur.execute('''CREATE TABLE Orders ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, visit_id INTEGER, order_id
+        INTEGER, order_name INTEGER, order_guid TEXT, table_code INTEGER, waiter_id INTEGER, to_pay_sum INTEGER)''')
+        cur.execute('''CREATE TABLE Visits ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, visit_id INTEGER, finished INTEGER)''')
 
         db.close()
 
         logger.info('New tables in DB were created.')
         logger.info('Here we go!!!')
 
-    def code_list_request(self, string, i, p, user_name, pass_word, table):
+    def collections_list_request(self, string, i, p, user_name, pass_word, table):
         self.string = string
         self.i = i
         self.p = p
@@ -65,7 +70,7 @@ class Request:
             if attr_of_item_node.get('Status') == 'rsActive' and attr_of_item_node.get('ActiveHierarchy') == 'true':
                 # Делаем запрос в DB - переменные в запросе отображаем через: "{}" - для переменной таблицы и
                 # "?" - для переменных значений.
-                cur = db.cursor()
+                cur = db.cursor(mycursor)
                 cur.execute('''INSERT INTO {} (name, code) VALUES (?, ?)'''.format(self.table), (attr_of_item_node.get('Name'), attr_of_item_node.get('Code')))
                 logger.debug('Transaction to "%s" table is completed.' % (attr_of_item_node.get('Name')))
                 cur.close()
@@ -86,7 +91,7 @@ class Request:
         response = requests.get(ip_string, data=xml_request_string, auth=(self.user_name, self.pass_word), verify=False)
         parsed_element_list = ET.fromstring(response.content)
         db = sqlite3.connect('reference.db')
-        cur = db.cursor()
+        cur = db.cursor(mycursor)
         for item in parsed_element_list.findall("./RK7Reference/Items/Item"):
             attr_of_item_node = (item.attrib)
             if attr_of_item_node.get('Status') == 'rsActive' and attr_of_item_node.get('ActiveHierarchy') == 'true':
@@ -104,7 +109,7 @@ class Request:
         self.pass_word = pass_word
         session = requests.session()
         db = sqlite3.connect('reference.db')
-        cur = db.cursor()
+        cur = db.cursor(mycursor)
         cur.execute('''SELECT code FROM Cashes''')
         # Сформируем переменную для запроса. Почему-то отвалилась конвертация в самом теле запроса, пришлось выделять в
         # отдельную переменную.
@@ -119,7 +124,6 @@ class Request:
         получим первый эелемент списка'''
 
         xml_request_string = '<RK7Query><RK7CMD CMD="GetOrderMenu" StationCode="' + a + '" DateTime="' + strftime("%Y-%m-%d %H:%M:%S") + '" /></RK7Query>'
-        print(xml_request_string)
         cur.close()
 
         # Делаю запрос всех элементов меню (нужен для получения меню). В дальнейшем будет использоваться для
@@ -138,7 +142,7 @@ class Request:
         for item in parsed_ident_nodes.findall("./Dishes/Item"):
             # В переменную "attr_of_item_node" передаем значения всех атрибутов (2 штуки)
             attr_of_item_node = (item.attrib)
-            cur = db.cursor()
+            cur = db.cursor(mycursor)
             cur.execute('''INSERT INTO Menu_Order (ident, price) VALUES (?, ?)''',
                              (attr_of_item_node.get('Ident'), attr_of_item_node.get('Price')))
             logger.debug('Transaction of "%s" ident is completed.' % (attr_of_item_node.get('Ident')))
@@ -148,17 +152,48 @@ class Request:
         # Делаем запрос полного меню
         response_menu = session.request(method='GET', url=ip_string, data=xml_request_string_full_menu,
                                    auth=(self.user_name, self.pass_word), verify=False)
-        logger.info(response)
         # С помощью The ElementTree XML API делаем парсинг ответа из строки
         parsed_full_menu = ET.fromstring(response_menu.content)
         for item in parsed_full_menu.findall("./RK7Reference/Items/Item"):
             attr_of_item_node = (item.attrib)
             if attr_of_item_node.get('Status') == 'rsActive' and attr_of_item_node.get('ActiveHierarchy') == 'true':
-                cur = db.cursor()
+                cur = db.cursor(mycursor)
                 # Наполним таблицу DB значениями
                 cur.execute('''INSERT INTO Menu (name, ident) VALUES (?, ?)''',
                             (attr_of_item_node.get('Name'), attr_of_item_node.get('Ident')))
-                logger.info('Transaction of "%s" item is completed.' % (attr_of_item_node.get('Name')))
+                logger.debug('Transaction of "%s" item is completed.' % (attr_of_item_node.get('Name')))
         db.commit()
         cur.close()
+        db.close()
+
+    def order_list_request(self, i, p, user_name, pass_word):
+        self.i = i
+        self.p = p
+        self.user_name = user_name
+        self.pass_word = pass_word
+        # Основное тело запроса
+        xml_request_string = '<RK7Query><RK7CMD CMD="GetOrderList"/></RK7Query>'
+        ip_string = 'https://' + self.i + ":" + self.p + '/rk7api/v0/xmlinterface.xml'
+        requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+        response = requests.get(ip_string, data=xml_request_string, auth=(self.user_name, self.pass_word), verify=False)
+        parsed_order_list = ET.fromstring(response.content)
+        db = sqlite3.connect('reference.db')
+        for item in parsed_order_list.findall("./Visit"):
+            attr_of_orders_node = item.attrib
+            cur = db.cursor(mycursor)
+            cur.execute('''INSERT INTO Visits (visit_id, finished) VALUES (?, ?)''',
+            (attr_of_orders_node.get('VisitID'), attr_of_orders_node.get('Finished')))
+            logger.debug('Transaction of "%s" visit is completed.' % (attr_of_orders_node.get('VisitID')))
+            cur.close()
+        for item in parsed_order_list.findall("./Visit/Orders/Order"):
+            cur = db.cursor(mycursor)
+            order = item.attrib
+            cur.execute('''INSERT INTO Orders (order_id, order_name, order_guid, table_code, waiter_id, to_pay_sum)
+            VALUES (?, ?, ?, ?, ?, ?)''', (order.get('OrderID'), order.get('OrderName'), order.get('guid'),
+            order.get('TableCode'), order.get('WaiterID'), order.get('ToPaySum')))
+            logger.debug('Transaction of "%s" order is completed.' % (order.get('OrderName')))
+            cur.close()
+        db.commit()
+        #cur = db.cursor(mycursor)
+        #cur.execute('''SELECT ''')
         db.close()

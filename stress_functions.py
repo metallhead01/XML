@@ -175,16 +175,16 @@ class Stress_functions:
                                 status = parsed_pay_ok.get('Status')
                                 if status == 'Ok':
                                     count += 1
-                                elif parsed_pay_ok.get('Status') != "Ok":
-                                    raise NameError(parsed_guid_nodes.get('ErrorText'))
                                 response_pay_order.encoding = 'UTF-8'
                                 log.debug_log_writing(response_pay_order.text)
                                 cur_1.close()
-                            except NameError as n:
-                                messagebox.showerror(title='Order pay error', message=n)
-                                error_log.warning_log_writing(n)
-                            else:
                                 times += 1
+                                if parsed_pay_ok.get('Status') != "Ok":
+                                    raise NameError(parsed_pay_ok.get('ErrorText'))
+                            except NameError as m:
+                                messagebox.showerror(title='Order pay error', message=m)
+                                error_log.warning_log_writing(m)
+                            else:
                                 log.info_log_writing('Orders tried to create "%s", Ok is "%s".' % (times, count))
                                 db.close()
                     except NameError as n:
