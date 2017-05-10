@@ -31,31 +31,14 @@ class Stress_functions:
         # Создаем соединение с нашей базой данных
         db = sqlite3.connect('reference.db')
         # Создаем курсор - это специальный объект который делает запросы и получает их результаты
-        cur_1 = db.cursor()
         session = requests.session()
         times = 0
-        # Запросим количество строк в таблицах, для того чтобы правильно задать границы случайной генерации чисел.
-        # Полученм переменую используем в качестве второго аргумнта функции ".randint".
-        cur_1.execute('SELECT Count(key) FROM Order_Type')
-        a = cur_1.fetchone()[0]
-        cur_1.execute('SELECT Count(key) FROM Tables')
-        b = cur_1.fetchone()[0]
-        cur_1.execute('SELECT Count(key) FROM Cashes')
-        c = cur_1.fetchone()[0]
-        cur_1.execute('SELECT Count(key) FROM Menu_Order')
-        d = cur_1.fetchone()[0]
-        cur_1.execute('SELECT Count(key) FROM Currencies')
-        e = cur_1.fetchone()[0]
-        cur_1.execute('SELECT Count(key) FROM Employees')
-        f = cur_1.fetchone()[0]
-        cur_1.close()
         count = 0
         # Т.к. начинаем с первого заказа, то количество раз, полученных от пользователя надо уменьшить на 1.
         if self.orders_number == 1:
             self.orders_number = 2
         else:
             pass
-
         ''' Проверим, ввел ли ли пользователь ip и порт, если нет - выдадим ошибку'''
         if not self.i and not self.p:
             messagebox.showwarning(title='Error', message="Введите IP-адрес и порт!")
@@ -89,29 +72,20 @@ class Stress_functions:
                         while times <= (int(self.orders_number) - 1):
                             cur_1 = db.cursor()
                             # Order Type code
-                            cur_1.execute('SELECT code FROM Order_Type WHERE key = ? ', (randint(1, a),))
+                            cur_1.execute('SELECT code FROM Order_Type ORDER BY RANDOM() LIMIT 1')
                             order_type = cur_1.fetchone()[0]
                             # Table code
-                            cur_1.execute('SELECT code FROM Tables WHERE key = ? ', (randint(1, b),))
+                            cur_1.execute('SELECT code FROM Tables ORDER BY RANDOM() LIMIT 1')
                             table_code = cur_1.fetchone()[0]
                             # Station code
-                            cur_1.execute('SELECT code FROM Cashes WHERE key = ? ', (randint(1, c),))
+                            cur_1.execute('SELECT code FROM Cashes ORDER BY RANDOM() LIMIT 1')
                             station_code = cur_1.fetchone()[0]
-                            # Dish ID ident
-                            cur_1.execute('SELECT ident FROM Menu_Order WHERE key = ? ', (randint(1, d),))
-                            dish_id_1 = cur_1.fetchone()[0]
-                            cur_1.execute('SELECT ident FROM Menu_Order WHERE key = ? ', (randint(1, d),))
-                            dish_id_2 = cur_1.fetchone()[0]
-                            cur_1.execute('SELECT ident FROM Menu_Order WHERE key = ? ', (randint(1, d),))
-                            dish_id_3 = cur_1.fetchone()[0]
                             # Currency code
-                            cur_1.execute('SELECT ident FROM Currencies WHERE key = ? ', (randint(1, e),))
-                            currency = cur_1.fetchone()[0]
+                            cur_1.execute('SELECT code FROM Employees ORDER BY RANDOM() LIMIT 1')
+                            currency= cur_1.fetchone()[0]
                             # Employees code
-                            cur_1.execute('SELECT code FROM Employees WHERE key = ? ', (randint(1, f),))
+                            cur_1.execute('SELECT ident FROM Currencies ORDER BY RANDOM() LIMIT 1')
                             employee_code = cur_1.fetchone()[0]
-                            # Quantity (умноженное на 1000, т.к. изначально передается в дробной форме)
-                            qty = randint(1, 10) * 1000
                             cur_1.close()
 
                             # Время ожидания перед выполнением запроса
@@ -131,13 +105,38 @@ class Stress_functions:
                             # Проверяем возможность создания заказа - если статус что-нибудь, кроме "Ок" кидаем исключение.
                             if parsed_create_order.get('Status') != "Ok":
                                 raise NameError(parsed_create_order.get('ErrorText'))
+                            # Парсим ID визита
                             visit_id = parsed_create_order.get('VisitID')
-
+                            # Генерируем блюда для запроса. Делаем счетчик количества итераций равным 0.
+                            times = 1
+                            # Задаем переменную в которой будет храниться количество блюд = rand (не более пяти).
+                            a = randint(1, 5)
+                            # Задаем пустой словарь, в котором будем хранить коды полученных блюд и их количество.
+                            code_qty_dict = {}
+                            # Пока количество итераций меньше или равно случайного числа "a", выполнять код.
+                            while times <= a:
+                                cur_1 = db.cursor()
+                                # Взяли раздомное значение из базы
+                                cur_1.execute('SELECT ident FROM Menu_Order ORDER BY RANDOM() LIMIT 1')
+                                dish_id = cur_1.fetchone()[0]
+                                # Добавили в словарь, quantity (умноженное на 1000, т.к. изначально передается в
+                                # дробной форме)
+                                code_qty_dict[str(dish_id)] = (randint(1, 10) * 1000)
+                                times += 1
+                            l_ist = []
+                            # Собираем строку для XML-запроса. Для этого значения из словаря вставляем в шаблон и
+                            # добавляем в список
+                            for key, value in code_qty_dict.items():
+                                l_ist.append('<Dish id= "' + str(key) + '" quantity= "' + str(value) + '"></Dish>')
+                            # Объединяем список в строку при помощи разделителя
+                            sep = ' + '
+                            sep.join(l_ist)
+                            # Обнулили счетчик (т.к. мы находимся в глобальном цикле while)
+                            times = 1
+                            cur_1.close()
                             xml_save_order = ('<RK7Query><RK7CMD CMD="SaveOrder"><Order visit="' + str(visit_id) + '" '
-                            'orderIdent="256" /><Session><Station code="' + str(station_code) + '" /><Dish id="' +
-                            str(dish_id_1) + '" quantity="' + str(qty) + '"></Dish><Dish id="' + str(dish_id_2) + '"'
-                            ' quantity="' + str(qty) + '"></Dish><Dish id="' + str(dish_id_3) +
-                            '" quantity="' + str(qty) + '"></Dish></Session></RK7CMD></RK7Query>')
+                            'orderIdent="256" /><Session><Station code="' + str(station_code) + '" />' + sep.join(l_ist)
+                            + '</Session></RK7CMD></RK7Query>')
 
                             xml_save_order_string = xml_save_order.encode('utf-8')
                             response_save_order = session.request(method='POST', url=ip_string, data=xml_save_order_string,
