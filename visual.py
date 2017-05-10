@@ -4,10 +4,10 @@
 2. Разобраться с записью в файл и чтением из файла пресетов
 3. Собран один .exe-mode
 4. Поправить вывод OrderID и основного ответа заказа
+5. Шорткаты для открытия и записи в файл
 
 Сделать:
-1. Шорткаты для открытия и записи в файл
-2. Добавить функцию поиска по выводу
+1. Добавить функцию поиска по выводу
 """
 
 import sys
@@ -147,6 +147,20 @@ class Visual:
                     db_ok.log_writing('Ok. All references are loaded to DB')
 
         def open_file():
+            try:
+                file_path = filedialog.askopenfilename(title="Choose your file", filetypes=[("json files", "*.json")])
+                # filename = 'presets.json'
+                with open(file_path, 'r') as f_obj:
+                    file_import = json.load(f_obj)
+                '''Зададим ip и порт из полученных из файла значений'''
+                ip_add.set(file_import[0])
+                port.set(file_import[1])
+                id.set(file_import[2])
+                password.set(file_import[3])
+            except:
+                pass
+
+        def open_file_short(event):
             try:
                 file_path = filedialog.askopenfilename(title="Choose your file", filetypes=[("json files", "*.json")])
                 # filename = 'presets.json'
@@ -497,7 +511,7 @@ class Visual:
         self.file.entryconfig('Open...', accelerator="Ctrl+O")
 
         # Shortcut для открытия файла
-        # root.bind('<Control-o>', open_file())
+        self.root.bind('<Control-o>', open_file_short)
 
         '''Создали вкладки'''
 
