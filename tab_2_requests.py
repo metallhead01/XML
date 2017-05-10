@@ -185,15 +185,16 @@ class Request:
             (attr_of_orders_node.get('VisitID'), attr_of_orders_node.get('Finished')))
             logger.debug('Transaction of "%s" visit is completed.' % (attr_of_orders_node.get('VisitID')))
             cur.close()
-        for item in parsed_order_list.findall("./Visit/Orders/Order"):
-            cur = db.cursor(mycursor)
-            order = item.attrib
-            cur.execute('''INSERT INTO Orders (order_id, order_name, order_guid, table_code, waiter_id, to_pay_sum)
-            VALUES (?, ?, ?, ?, ?, ?)''', (order.get('OrderID'), order.get('OrderName'), order.get('guid'),
-            order.get('TableCode'), order.get('WaiterID'), order.get('ToPaySum')))
-            logger.debug('Transaction of "%s" order is completed.' % (order.get('OrderName')))
-            cur.close()
+            # Получим childs для выбранной нами ноды
+            orders = item[0].getchildren()
+            for order in orders:
+                cur = db.cursor(mycursor)
+                order_att = order.attrib
+                cur.execute('''INSERT INTO Orders (visit_id, order_id, order_name, order_guid, table_code, waiter_id,
+                to_pay_sum) VALUES (?, ?, ?, ?, ?, ?, ?)''', (attr_of_orders_node.get('VisitID'),
+                order_att.get('OrderID'), order_att.get('OrderName'), order_att.get('guid'), order_att.get('TableCode'),
+                order_att.get('WaiterID'), order_att.get('ToPaySum')))
+                logger.debug('Transaction of "%s" order is completed.' % (order_att.get('OrderName')))
+                cur.close()
         db.commit()
-        #cur = db.cursor(mycursor)
-        #cur.execute('''SELECT ''')
         db.close()
