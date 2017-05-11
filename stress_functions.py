@@ -70,7 +70,7 @@ class Stress_functions:
                 # Если такой строки нет - продолжаем выполнение функции
                     try:
                         while times <= (int(self.orders_number) - 1):
-                            cur_1 = db.cursor()
+                            cur_1 = db.cursor(mycursor)
                             # Order Type code
                             cur_1.execute('SELECT code FROM Order_Type ORDER BY RANDOM() LIMIT 1')
                             order_type = cur_1.fetchone()[0]
@@ -80,22 +80,38 @@ class Stress_functions:
                             # Station code
                             cur_1.execute('SELECT code FROM Cashes ORDER BY RANDOM() LIMIT 1')
                             station_code = cur_1.fetchone()[0]
-                            # Currency code
-                            cur_1.execute('SELECT code FROM Employees ORDER BY RANDOM() LIMIT 1')
-                            currency= cur_1.fetchone()[0]
                             # Employees code
+                            cur_1.execute('SELECT key, code FROM Employees ORDER BY RANDOM() LIMIT 1')
+                            # В employee_code положим key и ident, полученные и таблицы employees
+                            employee_code= cur_1.fetchone()
+                            # Currency code
                             cur_1.execute('SELECT ident FROM Currencies ORDER BY RANDOM() LIMIT 1')
-                            employee_code = cur_1.fetchone()[0]
+                            currency= cur_1.fetchone()[0]
                             cur_1.close()
 
                             # Время ожидания перед выполнением запроса
                             time.sleep(int(self.hold_time))
+                            # Регистрируем пользователя
+                            xml_register_waiter_string = '<RK7Query><RK7CMD CMD="LoginOnStation" cardCode = "' + \
+                            str(employee_code[1]) + '"><Station = "' + str(station_code) + '"/></RK7CMD></RK7Query>'
+
+                            cur_1 = db.cursor(mycursor)
+                            user_registred = cur_1.execute('UPDATE Employees SET registered="yes" WHERE key='
+                                                           + str(employee_code[0])+'')
+
+                            log.debug_log_writing(user_registred)
                             xml_request_string = ('<?xml version="1.0" encoding="UTF-8"?><RK7Query>'
                             '<RK7CMD CMD="CreateOrder"><Order><OrderType code= "' + str(order_type) + '" />'
-                            '<Waiter code="' + str(5046) + '"/><Table code= "' + str(table_code) + '" /></Order></RK7CMD>'
-                            '</RK7Query>')
+                            '<Waiter code="' + str(employee_code[1]) + '"/><Table code= "' + str(table_code) + '" />'
+                            '</Order></RK7CMD></RK7Query>')
+
                             requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
-                            response_create_order = session.request(method='POST', url=ip_string, data=xml_request_string,
+                            response_register_waiter = session.request(method='POST', url=ip_string,
+                                                                    data=xml_register_waiter_string,
+                                                                    auth=(self.user_name, self.pass_word), verify=False)
+
+                            response_create_order = session.request(method='POST', url=ip_string,
+                                                                    data=xml_request_string,
                                                                     auth=(self.user_name, self.pass_word), verify=False)
                             response_create_order.encoding = 'UTF-8'
                             log.debug_log_writing(response_create_order.text)

@@ -38,7 +38,8 @@ class Request:
         cur.execute('''CREATE TABLE Order_Type ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, name TEXT, code INTEGER)''')
         cur.execute('''CREATE TABLE Tables ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, name TEXT, code INTEGER)''')
         cur.execute('''CREATE TABLE Cashes ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, name TEXT, code INTEGER)''')
-        cur.execute('''CREATE TABLE Employees ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, code INTEGER, name TEXT)''')
+        cur.execute('''CREATE TABLE Employees ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, role TEXT,
+        role_ident INTEGER, name TEXT, code INTEGER, registered TEXT)''')
         cur.execute('''CREATE TABLE Currencies ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, name TEXT, ident INTEGER)''')
         cur.execute('''CREATE TABLE Menu_Order ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, ident INTEGER, price INTEGER)''')
         cur.execute('''CREATE TABLE Menu ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, ident INTEGER, name TEXT)''')
@@ -102,6 +103,46 @@ class Request:
         db.commit()
         cur.close()
         db.close()
+
+    def employees_list_request(self, i, p, user_name, pass_word):
+        self.i = i
+        self.p = p
+        self.user_name = user_name
+        self.pass_word = pass_word
+        # Основное тело запроса
+        xml_request_string = ('<RK7Query><RK7CMD CMD="GetRefData" RefName="Restaurants" IgnoreEnums="1" '
+                              'WithChildItems="3" WithMacroProp="1" OnlyActive = "1" '
+                              'PropMask="RIChildItems.(Ident,Name,genRestIP,genprnStation,genDefDlvCurrency,AltName,'
+                              'RIChildItems.TRole(ItemIdent,passdata,Name,AltName,gen*,'
+                              'RIChildItems.(Ident,Name,AltName,gen*)))"/></RK7Query>')
+
+        ip_string = 'https://' + self.i + ":" + self.p + '/rk7api/v0/xmlinterface.xml'
+        requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+        response = requests.get(ip_string, data=xml_request_string, auth=(self.user_name, self.pass_word), verify=False)
+        parsed_employees_list = ET.fromstring(response.content)
+        db = sqlite3.connect('reference.db')
+        for item in parsed_employees_list.findall("./RK7Reference/RIChildItems/TRK7Restaurant/RIChildItems/TRole"):
+            attr_of_role_node = item.attrib
+            print(attr_of_role_node)
+            # cur = db.cursor(mycursor)
+            # cur.execute('''INSERT INTO Employees (role, role_ident) VALUES (?, ?)''', (attr_of_role_node.get('Name'), attr_of_role_node.get('ItemIdent')))
+            # logger.debug('Transaction of "%s" role is completed.' % (attr_of_role_node.get('Name')))
+            # cur.close()
+            # Получим childs для выбранной нами ноды
+            employees = item[0].getchildren()
+            for employee in employees:
+                cur = db.cursor(mycursor)
+                employee_att = employee.attrib
+                cur.execute('''INSERT INTO Employees (role, role_ident, code, name) VALUES (?, ?, ?, ?)''',
+                (attr_of_role_node.get('Name'), attr_of_role_node.get('ItemIdent'), employee_att.get('Name'),
+                employee_att.get('Ident')))
+
+                logger.info('Transaction of "%s" is completed.' % (employee_att.get('Name')))
+                cur.close()
+
+        db.commit()
+
+
     def menu_request(self, i, p, user_name, pass_word):
         self.i = i
         self.p = p

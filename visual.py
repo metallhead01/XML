@@ -128,8 +128,7 @@ class Visual:
                     collections_request.collections_list_request('Cashes', ip_add.get(), port.get(), id.get(),
                                                           password.get(), 'Cashes')
 
-                    collections_request.collections_list_request('Employees', ip_add.get(), port.get(), id.get(),
-                                                                 password.get(), 'Employees')
+                    collections_request.employees_list_request(ip_add.get(), port.get(), id.get(), password.get())
 
                     # Вставим полученные от парсера значения в поле "Код валюты"
                     collections_request.currencies_list_request('CURRENCIES', ip_add.get(), port.get(), id.get(),
