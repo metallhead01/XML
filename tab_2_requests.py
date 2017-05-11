@@ -129,16 +129,16 @@ class Request:
             # logger.debug('Transaction of "%s" role is completed.' % (attr_of_role_node.get('Name')))
             # cur.close()
             # Получим childs для выбранной нами ноды
-            employees = item[0].getchildren()
-            for employee in employees:
-                cur = db.cursor(mycursor)
-                employee_att = employee.attrib
-                cur.execute('''INSERT INTO Employees (role, role_ident, code, name) VALUES (?, ?, ?, ?)''',
-                (attr_of_role_node.get('Name'), attr_of_role_node.get('ItemIdent'), employee_att.get('Name'),
-                employee_att.get('Ident')))
-
-                logger.info('Transaction of "%s" is completed.' % (employee_att.get('Name')))
-                cur.close()
+            if item:
+                employees = item[0].getchildren()
+                for employee in employees:
+                    cur = db.cursor(mycursor)
+                    employee_att = employee.attrib
+                    cur.execute('''INSERT INTO Employees (role, role_ident, code, name) VALUES (?, ?, ?, ?)''',
+                    (attr_of_role_node.get('Name'), attr_of_role_node.get('ItemIdent'), employee_att.get('Name'),
+                    employee_att.get('Ident')))
+                    logger.debug('Transaction of "%s" is completed.' % (employee_att.get('Name')))
+                    cur.close()
 
         db.commit()
 
