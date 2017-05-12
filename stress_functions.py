@@ -81,7 +81,8 @@ class Stress_functions:
                             cur_1.execute('SELECT code FROM Cashes ORDER BY RANDOM() LIMIT 1')
                             station_code = cur_1.fetchone()[0]
                             # Employees code
-                            cur_1.execute('SELECT key, code FROM Employees ORDER BY RANDOM() LIMIT 1')
+                            cur_1.execute('SELECT key, code FROM Employees WHERE NOT role="Дилеры" AND NOT '
+                                          'role="Системная" AND NOT role="Web-Reservation" ORDER BY RANDOM() LIMIT 1')
                             # В employee_code положим key и ident, полученные и таблицы employees
                             employee_code= cur_1.fetchone()
                             # Currency code
@@ -106,12 +107,15 @@ class Stress_functions:
                             '</Order></RK7CMD></RK7Query>')
 
                             requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+
+                            xml_unicode_register_waiter_string = xml_register_waiter_string.encode('utf-8')
                             response_register_waiter = session.request(method='POST', url=ip_string,
-                                                                    data=xml_register_waiter_string,
+                                                                    data=xml_unicode_register_waiter_string,
                                                                     auth=(self.user_name, self.pass_word), verify=False)
 
+                            xml_unicode_request_string = xml_request_string.encode('utf-8')
                             response_create_order = session.request(method='POST', url=ip_string,
-                                                                    data=xml_request_string,
+                                                                    data=xml_unicode_request_string,
                                                                     auth=(self.user_name, self.pass_word), verify=False)
                             response_create_order.encoding = 'UTF-8'
                             log.debug_log_writing(response_create_order.text)
