@@ -26,6 +26,7 @@ class Request:
         cur.execute('''DROP TABLE IF EXISTS Tables''')
         cur.execute('''DROP TABLE IF EXISTS Cashes''')
         cur.execute('''DROP TABLE IF EXISTS Employees''')
+        cur.execute('''DROP TABLE IF EXISTS Employees_2''')
         cur.execute('''DROP TABLE IF EXISTS Currencies''')
         cur.execute('''DROP TABLE IF EXISTS Menu_Order''')
         cur.execute('''DROP TABLE IF EXISTS Menu''')
@@ -39,7 +40,8 @@ class Request:
         cur.execute('''CREATE TABLE Tables ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, name TEXT, code INTEGER)''')
         cur.execute('''CREATE TABLE Cashes ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, name TEXT, code INTEGER)''')
         cur.execute('''CREATE TABLE Employees ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, role TEXT,
-        role_ident INTEGER, name TEXT, code INTEGER, ident INTEGER, registered TEXT)''')
+        role_ident INTEGER, name TEXT, card_code INTEGER, ident INTEGER, registered TEXT)''')
+        cur.execute('''CREATE TABLE Employees_2 ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, card_code INTEGER, ident INTEGER)''')
         cur.execute('''CREATE TABLE Currencies ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, name TEXT, ident INTEGER)''')
         cur.execute('''CREATE TABLE Menu_Order ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, ident INTEGER, price INTEGER)''')
         cur.execute('''CREATE TABLE Menu ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, ident INTEGER, name TEXT)''')
@@ -147,14 +149,18 @@ class Request:
         parsed_employees_code_list = ET.fromstring(response_code.content)
         cur_2 = db.cursor(mycursor)
         cur_2.execute('''SELECT ident FROM Employees''')
-        a = cur_2.fetchall()
-        print(a)
-        #for item in parsed_employees_code_list.findall("./RK7Reference/Items/Item"):
-        #    attr_of_item_node = (item.attrib)
-        #    if attr_of_item_node.get('Status') == 'rsActive' and attr_of_item_node.get('ActiveHierarchy') == 'true':
-        #        # Делаем запрос в DB - переменные в запросе отображаем через: "{}" - для переменной таблицы и
-        #        # "?" - для переменных значений.
-        #        cur.execute('''UPDATE Employees SET code=? WHERE ident=?''', (attr_of_item_node.get('Code'), attr_of_item_node.get('Ident')))
+
+        ident_list = cur_2.fetchall()
+
+        for item in parsed_employees_code_list.findall("./RK7Reference/Items/Item"):
+            attr_of_item_node = (item.attrib)
+            if attr_of_item_node.get('Status') == 'rsActive' and attr_of_item_node.get('ActiveHierarchy') == 'true':
+                cur = db.cursor(mycursor)
+                cur.execute('''INSERT INTO Employees_2 (card_code, ident) VALUES (?, ?)''', (attr_of_item_node.get('Code'), attr_of_item_node.get('Ident')))
+                cur.close()
+        # Делаем выборку из таблицы Employees_2 для значений совпадающих ident (Employees.ident = Employees_2.ident)
+        cur_2.execute('''UPDATE Employees SET card_code = (SELECT card_code FROM Employees_2 WHERE Employees.ident = Employees_2.ident)''')
+        cur_2.close()
         db.commit()
 
 
