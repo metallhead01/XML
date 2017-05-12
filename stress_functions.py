@@ -94,26 +94,28 @@ class Stress_functions:
                             time.sleep(int(self.hold_time))
                             # Регистрируем пользователя
                             xml_register_waiter_string = '<RK7Query><RK7CMD CMD="LoginOnStation" cardCode = "' + \
-                            str(employee_card_code) + '"><Station = "' + str(station_code) + '"/></RK7CMD></RK7Query>'
-                            cur_1 = db.cursor(mycursor)
-                            print(xml_register_waiter_string)
-                            print(employee_card_code)
-                            user_registred = cur_1.execute('''UPDATE Employees SET registered="yes" WHERE card_code=(?)
-                            ''', (employee_card_code,))
+                                                         str(employee_card_code) + '"><Station code = "' +\
+                                                         str(station_code) + '"/></RK7CMD></RK7Query>'
+                            requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+                            xml_unicode_register_waiter_string = xml_register_waiter_string.encode('utf-8')
+                            response_register_waiter = session.request(method='POST', url=ip_string,
+                                                                       data=xml_unicode_register_waiter_string,
+                                                                       auth=(self.user_name, self.pass_word),
+                                                                       verify=False)
+                            response_register_waiter.encoding = 'UTF-8'
+                            log.debug_log_writing(response_register_waiter.text)
 
-                            log.debug_log_writing(user_registred)
+                            if 'Status="Ok"' in response_register_waiter.text:
+                                cur_1 = db.cursor(mycursor)
+                                user_registred = cur_1.execute('''UPDATE Employees SET registered="yes" WHERE card_code
+                                =(?) ''', (employee_card_code,))
+                                log.debug_log_writing(user_registred)
+                            cur_1.close()
+
                             xml_request_string = ('<?xml version="1.0" encoding="UTF-8"?><RK7Query>'
                             '<RK7CMD CMD="CreateOrder"><Order><OrderType code= "' + str(order_type) + '" />'
                             '<Waiter code="' + str(employee_card_code) + '"/><Table code= "' + str(table_code) + '" />'
                             '</Order></RK7CMD></RK7Query>')
-
-                            requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
-
-                            xml_unicode_register_waiter_string = xml_register_waiter_string.encode('utf-8')
-                            response_register_waiter = session.request(method='POST', url=ip_string,
-                                                                    data=xml_unicode_register_waiter_string,
-                                                                    auth=(self.user_name, self.pass_word), verify=False)
-
                             xml_unicode_request_string = xml_request_string.encode('utf-8')
                             response_create_order = session.request(method='POST', url=ip_string,
                                                                     data=xml_unicode_request_string,
@@ -172,7 +174,7 @@ class Stress_functions:
                             if parsed_guid_nodes.get('Status') != "Ok":
                                 raise NameError(parsed_guid_nodes.get('ErrorText'))
                             parsed_guid = parsed_guid_nodes[0].attrib
-                            creator = parsed_guid_nodes[0][0].attrib
+                            waiter = parsed_guid_nodes[1][0].attrib
 
                             # время ожидания перед оплатой
                             time.sleep(int(self.pay_time))
@@ -182,7 +184,7 @@ class Stress_functions:
                             e = cur_1.fetchone()[0]
                             xml_pay_string = ('<RK7Query><RK7CMD CMD="PayOrder"><Order guid="' +
                                              str(parsed_guid.get('guid')) + '"/><Cashier code="' +
-                                             str(creator.get('id')) + '"/><Station code="' +
+                                             str(waiter.get('id')) + '"/><Station code="' +
                                              str(station_code) + '"/><Payment id="' + str(1) + '" amount="' +
                                              str(parsed_guid.get('basicSum'))+'"/></RK7CMD></RK7Query>')
                             xml_pay_string = xml_pay_string.encode('utf-8')
@@ -210,3 +212,4 @@ class Stress_functions:
                     except NameError as n:
                         messagebox.showerror(title='Order creation error', message=n)
                         error_log.warning_log_writing(n)
+                        db.close()
