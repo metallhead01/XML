@@ -692,8 +692,7 @@ class Visual:
         self.entry_xml_create_tab_4_arg3.place(x=15, y=210)
         # Код блюда (Combobox)
         # self.label_xml_create_tab_4_arg4 = Label(self.frame_4, text='Код блюда').place(x=15, y=228)
-        # self.entry_xml_create_tab_4_arg4 = ttk.Combobox(self.frame_4, textvariable=xml_arg4_tab_2,
-        #                                               width=17, state='readonly')
+        # self.entry_xml_create_tab_4_arg4 = ttk.Combobox(self.frame_4, textvariable=xml_arg4_tab_2, width=17, state='readonly')
         # self.entry_xml_create_tab_4_arg4.place(x=15, y=250)
 
         # Количество блюда

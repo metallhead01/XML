@@ -32,6 +32,8 @@ class Request:
         cur.execute('''DROP TABLE IF EXISTS Menu''')
         cur.execute('''DROP TABLE IF EXISTS Orders''')
         cur.execute('''DROP TABLE IF EXISTS Visits''')
+        cur.execute('''DROP TABLE IF EXISTS Modi_Items''')
+        cur.execute('''DROP TABLE IF EXISTS Modi_Schemes''')
 
         logger.info('DB was cleared.')
 
@@ -40,14 +42,22 @@ class Request:
         cur.execute('''CREATE TABLE Tables ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, name TEXT, code INTEGER)''')
         cur.execute('''CREATE TABLE Cashes ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, name TEXT, code INTEGER)''')
         cur.execute('''CREATE TABLE Employees ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, role TEXT,
-        role_ident INTEGER, name TEXT, card_code INTEGER, ident INTEGER, registered TEXT)''')
-        cur.execute('''CREATE TABLE Employees_2 ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, card_code INTEGER, ident INTEGER)''')
+        role_ident INTEGER, name TEXT, code INTEGER, ident INTEGER, registered TEXT)''')
+        cur.execute('''CREATE TABLE Employees_2 ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, code INTEGER,
+        card_code INTEGER, ident INTEGER)''')
         cur.execute('''CREATE TABLE Currencies ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, name TEXT, ident INTEGER)''')
-        cur.execute('''CREATE TABLE Menu_Order ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, ident INTEGER, price INTEGER)''')
-        cur.execute('''CREATE TABLE Menu ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, ident INTEGER, name TEXT)''')
+        cur.execute('''CREATE TABLE Menu_Order ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, name TEXT,
+        ident INTEGER, modi_scheme INTEGER, combo_scheme INTEGER, price INTEGER)''')
+        cur.execute('''CREATE TABLE Menu ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, ident INTEGER, name TEXT,
+        modi_scheme INTEGER, combo_scheme INTEGER)''')
         cur.execute('''CREATE TABLE Orders ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, visit_id INTEGER, order_id
         INTEGER, order_name INTEGER, order_guid TEXT, table_code INTEGER, waiter_id INTEGER, to_pay_sum INTEGER)''')
         cur.execute('''CREATE TABLE Visits ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, visit_id INTEGER, finished INTEGER)''')
+        cur.execute('''CREATE TABLE Modi_Items ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, ident INTEGER, name TEXT,
+        max_one_dish INTEGER, Weight INTEGER)''')
+        cur.execute('''CREATE TABLE Modi_Schemes ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, ident INTEGER, name TEXT,
+        modi_scheme INTEGER, combo_scheme INTEGER)''')
+
 
         db.close()
 
@@ -156,10 +166,11 @@ class Request:
             attr_of_item_node = (item.attrib)
             if attr_of_item_node.get('Status') == 'rsActive' and attr_of_item_node.get('ActiveHierarchy') == 'true':
                 cur = db.cursor(mycursor)
-                cur.execute('''INSERT INTO Employees_2 (card_code, ident) VALUES (?, ?)''', (attr_of_item_node.get('Code'), attr_of_item_node.get('Ident')))
+                cur.execute('''INSERT INTO Employees_2 (code, card_code, ident) VALUES (?, ?, ?)''',
+                (attr_of_item_node.get('Code'), attr_of_item_node.get('CardCode'), attr_of_item_node.get('Ident')))
                 cur.close()
         # Делаем выборку из таблицы Employees_2 для значений совпадающих ident (Employees.ident = Employees_2.ident)
-        cur_2.execute('''UPDATE Employees SET card_code = (SELECT card_code FROM Employees_2 WHERE Employees.ident = Employees_2.ident)''')
+        cur_2.execute('''UPDATE Employees SET code = (SELECT code FROM Employees_2 WHERE Employees.ident = Employees_2.ident)''')
         cur_2.close()
         db.commit()
 
@@ -221,11 +232,44 @@ class Request:
             if attr_of_item_node.get('Status') == 'rsActive' and attr_of_item_node.get('ActiveHierarchy') == 'true':
                 cur = db.cursor(mycursor)
                 # Наполним таблицу DB значениями
-                cur.execute('''INSERT INTO Menu (name, ident) VALUES (?, ?)''',
-                            (attr_of_item_node.get('Name'), attr_of_item_node.get('Ident')))
+                cur.execute('''INSERT INTO Menu (name, ident, modi_scheme, combo_scheme) VALUES (?, ?, ?, ?)''',
+                            (attr_of_item_node.get('Name'), attr_of_item_node.get('Ident'),
+                             attr_of_item_node.get('ModiScheme'), attr_of_item_node.get('ComboScheme')))
                 logger.debug('Transaction of "%s" item is completed.' % (attr_of_item_node.get('Name')))
-        db.commit()
+
+        # Делаем запрос списка модификаторов
+        xml_request_string_modi = '<RK7Query><RK7CMD CMD="GetRefData" RefName = "MODIFIERS"/></RK7Query>'
+        response_modi = session.request(method='GET', url=ip_string, data=xml_request_string_modi,
+                                   auth=(self.user_name, self.pass_word), verify=False)
+        parsed_modi = ET.fromstring(response_modi.content)
+        for item in parsed_modi.findall("./RK7Reference/Items/Item"):
+            attr_of_item_node = (item.attrib)
+            if attr_of_item_node.get('Status') == 'rsActive' and attr_of_item_node.get('ActiveHierarchy') == 'true':
+                cur = db.cursor(mycursor)
+                cur.execute('''INSERT INTO Modi_Items (name, ident, max_one_dish, weight) VALUES (?, ?, ?, ?)''',
+                            (attr_of_item_node.get('Name'), attr_of_item_node.get('Ident'),
+                             attr_of_item_node.get('MaxOneDish'), attr_of_item_node.get('Weight')))
+                logger.debug('Transaction of "%s" item is completed.' % (attr_of_item_node.get('Name')))
+
+        # Делаем запрос схем модификаторов
+        xml_request_string_modi_schemes = '<RK7Query><RK7CMD CMD="GetRefData" RefName = "MODISCHEMES"/></RK7Query>'
+        response_modi_schemes = session.request(method='GET', url=ip_string, data=xml_request_string_modi_schemes,
+                                        auth=(self.user_name, self.pass_word), verify=False)
+        parsed_modi_schemes = ET.fromstring(response_modi_schemes.content)
+        for item in parsed_modi.findall("./RK7Reference/Items/Item"):
+            attr_of_item_node = (item.attrib)
+            if attr_of_item_node.get('Status') == 'rsActive' and attr_of_item_node.get('ActiveHierarchy') == 'true':
+                cur = db.cursor(mycursor)
+                cur.execute('''INSERT INTO Modi_Items (name, ident, max_one_dish, weight) VALUES (?, ?, ?, ?)''',
+                            (attr_of_item_node.get('Name'), attr_of_item_node.get('Ident'),
+                             attr_of_item_node.get('MaxOneDish'), attr_of_item_node.get('Weight')))
+                logger.debug('Transaction of "%s" item is completed.' % (attr_of_item_node.get('Name')))
+
+        cur.execute('''UPDATE Menu_Order SET name = (SELECT name FROM Menu WHERE Menu.ident = Menu_Order.ident)''')
+        cur.execute('''UPDATE Menu_Order SET modi_scheme = (SELECT modi_scheme FROM Menu WHERE Menu.ident = Menu_Order.ident)''')
+        cur.execute('''UPDATE Menu_Order SET combo_scheme = (SELECT combo_scheme FROM Menu WHERE Menu.ident = Menu_Order.ident)''')
         cur.close()
+        db.commit()
         db.close()
 
     def order_list_request(self, i, p, user_name, pass_word):
