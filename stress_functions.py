@@ -29,7 +29,7 @@ class Stress_functions:
         self.pay_time = pay_time
         log = CustomFunctions('stress_log')
         # Создаем соединение с нашей базой данных
-        db = sqlite3.connect('reference.db')
+        #db = sqlite3.connect('reference.db')
         # Создаем курсор - это специальный объект который делает запросы и получает их результаты
         session = requests.session()
         times = 0
@@ -69,6 +69,7 @@ class Stress_functions:
             else:
                 # Если такой строки нет - продолжаем выполнение функции
                 while times <= (int(self.orders_number) - 1):
+                    db = sqlite3.connect('reference.db')
                     try:
                         cur_1 = db.cursor(mycursor)
                         # Order Type code
@@ -91,6 +92,7 @@ class Stress_functions:
                         cur_1.execute('SELECT ident FROM Currencies ORDER BY RANDOM() LIMIT 1')
                         currency = cur_1.fetchone()[0]
                         cur_1.close()
+
 
                     except TypeError as m:
                         messagebox.showerror(title=m, message='Request of Creation Fields Error')
@@ -115,8 +117,7 @@ class Stress_functions:
 
                         if 'Status="Ok"' in response_register_waiter.text:
                             cur_1 = db.cursor(mycursor)
-                            user_registred = cur_1.execute('''UPDATE Employees SET registered="yes" WHERE code=(?)
-                            ''', (employee_code,))
+                            user_registred = cur_1.execute('''UPDATE Employees SET registered="yes" WHERE code=(?)''', (employee_code,))
                             cur_1.close()
                             log.info_log_writing('Пользователь '+ str(employee_code) + ' зарегистрирован на кассе '
                                                   + str(station_code))
@@ -147,7 +148,7 @@ class Stress_functions:
                             raise NameError(parsed_create_order.get('ErrorText'))
                         # Парсим ID визита
                         visit_id = parsed_create_order.get('VisitID')
-                        # Генерируем блюда для запроса. Делаем счетчик количества итераций равным 0.
+                        # Генерируем блюда для запроса. Делаем счетчик количества итераций равным 1.
                         times = 1
                         # Задаем переменную в которой будет храниться количество блюд = rand (не более пяти).
                         a = randint(1, 5)
@@ -226,12 +227,8 @@ class Stress_functions:
                                 messagebox.showerror(title='Order pay error', message=m)
                                 error_log.warning_log_writing(m)
                             else:
-                                log.info_log_writing('Orders tried to create "%s", Ok is "%s".' % (times, count))
+                                log.info_log_writing('Orders tried to create "%s", Ok is "%s".' % (times - 1, count))
                                 db.close()
                         except NameError as m:
                             messagebox.showerror(title='Order pay error', message=m)
                             error_log.warning_log_writing(m)
-            #except NameError as n:
-            #    messagebox.showerror(title='Order creation error', message=n)
-            #    error_log.warning_log_writing(n)
-            #    db.close()
