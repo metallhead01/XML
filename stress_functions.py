@@ -68,115 +68,121 @@ class Stress_functions:
                 error_log.warning_log_writing('Login or password is incorrect.')
             else:
                 # Если такой строки нет - продолжаем выполнение функции
+                while times <= (int(self.orders_number) - 1):
                     try:
-                        while times <= (int(self.orders_number) - 1):
+                        cur_1 = db.cursor(mycursor)
+                        # Order Type code
+                        cur_1.execute('SELECT code FROM Order_Type ORDER BY RANDOM() LIMIT 1')
+                        order_type = cur_1.fetchone()[0]
+                        # Table code
+                        cur_1.execute('SELECT code FROM Tables ORDER BY RANDOM() LIMIT 1')
+                        table_code = cur_1.fetchone()[0]
+                        # Station code
+                        cur_1.execute('SELECT code FROM Cashes ORDER BY RANDOM() LIMIT 1')
+                        station_code = cur_1.fetchone()[0]
+                        # Employees code
+                        #cur_1.execute('SELECT card_code FROM Employees WHERE NOT role="Дилеры" AND NOT '
+                        #              'role="Системная" AND NOT role="Web-Reservation" ORDER BY RANDOM() LIMIT 1')
+
+                        cur_1.execute('SELECT code FROM Employees WHERE role="Администраторы" AND restaurant="Центральный Офис"')
+                        # В employee_code положим key и ident, полученные и таблицы employees
+                        employee_code = cur_1.fetchone()[0]
+                        # Currency code
+                        cur_1.execute('SELECT ident FROM Currencies ORDER BY RANDOM() LIMIT 1')
+                        currency = cur_1.fetchone()[0]
+                        cur_1.close()
+
+                    except TypeError as m:
+                        messagebox.showerror(title=m, message='Request of Creation Fields Error')
+                        error_log.warning_log_writing(m)
+                        times = int(self.orders_number)
+                    else:
+                        # Время ожидания перед выполнением запроса
+                        time.sleep(int(self.hold_time))
+                        # Регистрируем пользователя
+                        xml_register_waiter_string = '<RK7Query><RK7CMD CMD="RegisterEmployee"> <Waiter code = "' + \
+                                                     str(employee_code) + '"/><Station code = "' +\
+                                                     str(station_code) + '"/></RK7CMD></RK7Query>'
+                        requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+                        xml_unicode_register_waiter_string = xml_register_waiter_string.encode('utf-8')
+                        response_register_waiter = session.request(method='POST', url=ip_string,
+                                                                   data=xml_unicode_register_waiter_string,
+                                                                   auth=(self.user_name, self.pass_word),
+                                                                   verify=False)
+                        response_register_waiter.encoding = 'UTF-8'
+                        log.debug_log_writing(xml_unicode_register_waiter_string)
+                        log.debug_log_writing(response_register_waiter.text)
+
+                        if 'Status="Ok"' in response_register_waiter.text:
                             cur_1 = db.cursor(mycursor)
-                            # Order Type code
-                            cur_1.execute('SELECT code FROM Order_Type ORDER BY RANDOM() LIMIT 1')
-                            order_type = cur_1.fetchone()[0]
-                            # Table code
-                            cur_1.execute('SELECT code FROM Tables ORDER BY RANDOM() LIMIT 1')
-                            table_code = cur_1.fetchone()[0]
-                            # Station code
-                            cur_1.execute('SELECT code FROM Cashes ORDER BY RANDOM() LIMIT 1')
-                            station_code = cur_1.fetchone()[0]
-                            # Employees code
-                            #cur_1.execute('SELECT card_code FROM Employees WHERE NOT role="Дилеры" AND NOT '
-                            #              'role="Системная" AND NOT role="Web-Reservation" ORDER BY RANDOM() LIMIT 1')
-
-                            cur_1.execute('SELECT code FROM Employees WHERE role="QSR_Admin"')
-                            # В employee_code положим key и ident, полученные и таблицы employees
-                            employee_code= cur_1.fetchone()[0]
-                            # Currency code
-                            cur_1.execute('SELECT ident FROM Currencies ORDER BY RANDOM() LIMIT 1')
-                            currency= cur_1.fetchone()[0]
+                            user_registred = cur_1.execute('''UPDATE Employees SET registered="yes" WHERE code=(?)
+                            ''', (employee_code,))
                             cur_1.close()
-
-                            # Время ожидания перед выполнением запроса
-                            time.sleep(int(self.hold_time))
-                            # Регистрируем пользователя
-                            xml_register_waiter_string = '<RK7Query><RK7CMD CMD="RegisterEmployee"> <Waiter code = "' + \
-                                                         str(employee_code) + '"/><Station code = "' +\
-                                                         str(station_code) + '"/></RK7CMD></RK7Query>'
-                            requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
-                            xml_unicode_register_waiter_string = xml_register_waiter_string.encode('utf-8')
-                            response_register_waiter = session.request(method='POST', url=ip_string,
-                                                                       data=xml_unicode_register_waiter_string,
-                                                                       auth=(self.user_name, self.pass_word),
-                                                                       verify=False)
-                            response_register_waiter.encoding = 'UTF-8'
-                            log.debug_log_writing(xml_unicode_register_waiter_string)
-                            log.debug_log_writing(response_register_waiter.text)
-
-                            if 'Status="Ok"' in response_register_waiter.text:
-                                cur_1 = db.cursor(mycursor)
-                                user_registred = cur_1.execute('''UPDATE Employees SET registered="yes" WHERE code=(?)
-                                ''', (employee_code,))
-                                cur_1.close()
-                                log.info_log_writing('Пользователь '+ str(employee_code) + ' зарегистрирован на кассе '
-                                                      + str(station_code))
-                            elif 'Status="Query Executing Error"' and 'RK7ErrorN="2101"' in response_register_waiter.text:
-                                cur_1 = db.cursor(mycursor)
-                                user_registred = cur_1.execute('''UPDATE Employees SET registered="yes" WHERE card_code
-                                =(?) ''', (employee_code,))
-                                cur_1.close()
-                                log.info_log_writing('Пользователь '+ str(employee_code) + ' уже зарегистрирован на'
-                                ' кассе ' + str(station_code))
-
-                            xml_request_string = ('<?xml version="1.0" encoding="UTF-8"?><RK7Query>'
-                            '<RK7CMD CMD="CreateOrder"><Order><OrderType code= "' + str(order_type) + '" />'
-                            '<Waiter code="' + str(employee_code) + '"/><Table code= "' + str(table_code) + '" />'
-                            '</Order></RK7CMD></RK7Query>')
-                            xml_unicode_request_string = xml_request_string.encode('utf-8')
-                            log.debug_log_writing(xml_unicode_request_string)
-                            response_create_order = session.request(method='POST', url=ip_string,
-                                                                    data=xml_unicode_request_string,
-                                                                    auth=(self.user_name, self.pass_word), verify=False)
-                            response_create_order.encoding = 'UTF-8'
-                            log.debug_log_writing(response_create_order.text)
-                            parsed_ident_nodes = ET.fromstring(response_create_order.content)
-                            '''Перебираем все ноды "Item" в прямой дочерней ноде "Dishes"'''
-                            parsed_create_order = parsed_ident_nodes.attrib
-                            # Проверяем возможность создания заказа - если статус что-нибудь, кроме "Ок" кидаем исключение.
-                            if parsed_create_order.get('Status') != "Ok":
-                                raise NameError(parsed_create_order.get('ErrorText'))
-                            # Парсим ID визита
-                            visit_id = parsed_create_order.get('VisitID')
-                            # Генерируем блюда для запроса. Делаем счетчик количества итераций равным 0.
-                            times = 1
-                            # Задаем переменную в которой будет храниться количество блюд = rand (не более пяти).
-                            a = randint(1, 5)
-                            # Задаем пустой словарь, в котором будем хранить коды полученных блюд и их количество.
-                            code_qty_dict = {}
-                            # Пока количество итераций меньше или равно случайного числа "a", выполнять код.
-                            while times <= a:
-                                cur_1 = db.cursor()
-                                # Взяли раздомное значение из базы
-                                cur_1.execute('SELECT ident FROM Menu_Order ORDER BY RANDOM() LIMIT 1')
-                                dish_id = cur_1.fetchone()[0]
-                                # Добавили в словарь, quantity (умноженное на 1000, т.к. изначально передается в
-                                # дробной форме)
-                                code_qty_dict[str(dish_id)] = (randint(1, 10) * 1000)
-                                times += 1
-                            l_ist = []
-                            # Собираем строку для XML-запроса. Для этого значения из словаря вставляем в шаблон и
-                            # добавляем в список
-                            for key, value in code_qty_dict.items():
-                                l_ist.append('<Dish id= "' + str(key) + '" quantity= "' + str(value) + '"></Dish>')
-                            # Объединяем список в строку при помощи разделителя
-                            sep = ''
-                            sep.join(l_ist)
-                            # Обнулили счетчик (т.к. мы находимся в глобальном цикле while)
-                            times = 1
+                            log.info_log_writing('Пользователь '+ str(employee_code) + ' зарегистрирован на кассе '
+                                                  + str(station_code))
+                        elif 'Status="Query Executing Error"' and 'RK7ErrorN="2101"' in response_register_waiter.text:
+                            cur_1 = db.cursor(mycursor)
+                            user_registred = cur_1.execute('''UPDATE Employees SET registered="yes" WHERE card_code
+                            =(?) ''', (employee_code,))
                             cur_1.close()
-                            xml_save_order = ('<RK7Query><RK7CMD CMD="SaveOrder"><Order visit="' + str(visit_id) + '" '
-                            'orderIdent="256" /><Session><Station code="' + str(station_code) + '" />' +
-                            '<Creator code="' + str(employee_code) + '"/>' + sep.join(l_ist) +
-                            '</Session></RK7CMD></RK7Query>')
+                            log.info_log_writing('Пользователь '+ str(employee_code) + ' уже зарегистрирован на'
+                            ' кассе ' + str(station_code))
 
-                            xml_save_order_string = xml_save_order.encode('utf-8')
+                        xml_request_string = ('<?xml version="1.0" encoding="UTF-8"?><RK7Query>'
+                        '<RK7CMD CMD="CreateOrder"><Order><OrderType code= "' + str(order_type) + '" />'
+                        '<Waiter code="' + str(employee_code) + '"/><Table code= "' + str(table_code) + '" />'
+                        '</Order></RK7CMD></RK7Query>')
+                        xml_unicode_request_string = xml_request_string.encode('utf-8')
+                        log.debug_log_writing(xml_unicode_request_string)
+                        response_create_order = session.request(method='POST', url=ip_string,
+                                                                data=xml_unicode_request_string,
+                                                                auth=(self.user_name, self.pass_word), verify=False)
+                        response_create_order.encoding = 'UTF-8'
+                        log.debug_log_writing(response_create_order.text)
+                        parsed_ident_nodes = ET.fromstring(response_create_order.content)
+                        '''Перебираем все ноды "Item" в прямой дочерней ноде "Dishes"'''
+                        parsed_create_order = parsed_ident_nodes.attrib
+                        # Проверяем возможность создания заказа - если статус что-нибудь, кроме "Ок" кидаем исключение.
+                        if parsed_create_order.get('Status') != "Ok":
+                            raise NameError(parsed_create_order.get('ErrorText'))
+                        # Парсим ID визита
+                        visit_id = parsed_create_order.get('VisitID')
+                        # Генерируем блюда для запроса. Делаем счетчик количества итераций равным 0.
+                        times = 1
+                        # Задаем переменную в которой будет храниться количество блюд = rand (не более пяти).
+                        a = randint(1, 5)
+                        # Задаем пустой словарь, в котором будем хранить коды полученных блюд и их количество.
+                        code_qty_dict = {}
+                        # Пока количество итераций меньше или равно случайного числа "a", выполнять код.
+                        while times <= a:
+                            cur_1 = db.cursor()
+                            # Взяли раздомное значение из базы
+                            cur_1.execute('SELECT ident FROM Menu_Order ORDER BY RANDOM() LIMIT 1')
+                            dish_id = cur_1.fetchone()[0]
+                            # Добавили в словарь, quantity (умноженное на 1000, т.к. изначально передается в
+                            # дробной форме)
+                            code_qty_dict[str(dish_id)] = (randint(1, 10) * 1000)
+                            times += 1
+                        l_ist = []
+                        # Собираем строку для XML-запроса. Для этого значения из словаря вставляем в шаблон и
+                        # добавляем в список
+                        for key, value in code_qty_dict.items():
+                            l_ist.append('<Dish id= "' + str(key) + '" quantity= "' + str(value) + '"></Dish>')
+                        # Объединяем список в строку при помощи разделителя
+                        sep = ''
+                        sep.join(l_ist)
+                        # Обнулили счетчик (т.к. мы находимся в глобальном цикле while)
+                        times = 1
+                        cur_1.close()
+                        xml_save_order = ('<RK7Query><RK7CMD CMD="SaveOrder"><Order visit="' + str(visit_id) + '" '
+                        'orderIdent="256" /><Session><Station code="' + str(station_code) + '" />' +
+                        '<Creator code="' + str(employee_code) + '"/>' + sep.join(l_ist) +
+                        '</Session></RK7CMD></RK7Query>')
+
+                        xml_save_order_string = xml_save_order.encode('utf-8')
+                        try:
                             response_save_order = session.request(method='POST', url=ip_string, data=xml_save_order_string,
-                                                                  auth=(self.user_name, self.pass_word), verify=False)
+                                                              auth=(self.user_name, self.pass_word), verify=False)
                             # Перекодируем response_save_order в нужную нам кодировку (кириллица поломана)
                             response_save_order.encoding = 'UTF-8'
                             log.debug_log_writing(response_save_order.text)
@@ -222,7 +228,10 @@ class Stress_functions:
                             else:
                                 log.info_log_writing('Orders tried to create "%s", Ok is "%s".' % (times, count))
                                 db.close()
-                    except NameError as n:
-                        messagebox.showerror(title='Order creation error', message=n)
-                        error_log.warning_log_writing(n)
-                        db.close()
+                        except NameError as m:
+                            messagebox.showerror(title='Order pay error', message=m)
+                            error_log.warning_log_writing(m)
+            #except NameError as n:
+            #    messagebox.showerror(title='Order creation error', message=n)
+            #    error_log.warning_log_writing(n)
+            #    db.close()

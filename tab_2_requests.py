@@ -1,11 +1,11 @@
 import requests
 import xml.etree.ElementTree as ET
+from lxml import etree
 import sqlite3
 import logging.config
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 from time import strftime
 from custom_functions import *
-
 
 logging.config.fileConfig('logging.ini')
 logger = logging.getLogger('tab2Requests')
@@ -38,26 +38,33 @@ class Request:
         logger.info('DB was cleared.')
 
         # Создаем таблицы в reference.db
-        cur.execute('''CREATE TABLE Order_Type ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, name TEXT, code INTEGER)''')
-        cur.execute('''CREATE TABLE Tables ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, name TEXT, code INTEGER)''')
-        cur.execute('''CREATE TABLE Cashes ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, name TEXT, code INTEGER)''')
-        cur.execute('''CREATE TABLE Employees ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, role TEXT,
+        cur.execute(
+            '''CREATE TABLE Order_Type ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, name TEXT, code INTEGER)''')
+        cur.execute(
+            '''CREATE TABLE Tables ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, name TEXT, code INTEGER)''')
+        cur.execute(
+            '''CREATE TABLE Cashes ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, name TEXT, code INTEGER)''')
+        cur.execute(
+            '''CREATE TABLE Employees ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, restaurant TEXT, role TEXT,
         role_ident INTEGER, name TEXT, code INTEGER, ident INTEGER, registered TEXT)''')
-        cur.execute('''CREATE TABLE Employees_2 ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, code INTEGER,
-        card_code INTEGER, ident INTEGER)''')
-        cur.execute('''CREATE TABLE Currencies ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, name TEXT, ident INTEGER)''')
+        cur.execute(
+            '''CREATE TABLE Employees_2 ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, code INTEGER, card_code INTEGER, ident INTEGER)''')
+        cur.execute(
+            '''CREATE TABLE Currencies ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, name TEXT, ident INTEGER)''')
         cur.execute('''CREATE TABLE Menu_Order ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, name TEXT,
         ident INTEGER, modi_scheme INTEGER, combo_scheme INTEGER, price INTEGER)''')
         cur.execute('''CREATE TABLE Menu ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, ident INTEGER, name TEXT,
         modi_scheme INTEGER, combo_scheme INTEGER)''')
-        cur.execute('''CREATE TABLE Orders ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, visit_id INTEGER, order_id
-        INTEGER, order_name INTEGER, order_guid TEXT, table_code INTEGER, waiter_id INTEGER, to_pay_sum INTEGER)''')
-        cur.execute('''CREATE TABLE Visits ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, visit_id INTEGER, finished INTEGER)''')
+        cur.execute(
+            '''CREATE TABLE Orders ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, visit_id INTEGER,
+            order_id INTEGER, order_name INTEGER, order_guid TEXT, table_code INTEGER, waiter_id INTEGER,
+            to_pay_sum INTEGER, finished INTEGER)''')
+        cur.execute(
+            '''CREATE TABLE Visits ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, visit_id INTEGER, finished INTEGER)''')
         cur.execute('''CREATE TABLE Modi_Items ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, ident INTEGER, name TEXT,
         max_one_dish INTEGER, Weight INTEGER)''')
         cur.execute('''CREATE TABLE Modi_Schemes ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, ident INTEGER, name TEXT,
         modi_scheme INTEGER, combo_scheme INTEGER)''')
-
 
         db.close()
 
@@ -84,7 +91,8 @@ class Request:
                 # Делаем запрос в DB - переменные в запросе отображаем через: "{}" - для переменной таблицы и
                 # "?" - для переменных значений.
                 cur = db.cursor(mycursor)
-                cur.execute('''INSERT INTO {} (name, code) VALUES (?, ?)'''.format(self.table), (attr_of_item_node.get('Name'), attr_of_item_node.get('Code')))
+                cur.execute('''INSERT INTO {} (name, code) VALUES (?, ?)'''.format(self.table),
+                            (attr_of_item_node.get('Name'), attr_of_item_node.get('Code')))
                 logger.debug('Transaction to "%s" table is completed.' % (attr_of_item_node.get('Name')))
                 cur.close()
         db.commit()
@@ -110,7 +118,8 @@ class Request:
             if attr_of_item_node.get('Status') == 'rsActive' and attr_of_item_node.get('ActiveHierarchy') == 'true':
                 # Делаем запрос в DB - переменные в запросе отображаем через: "{}" - для переменной таблицы и
                 # "?" - для переменных значений.
-                cur.execute('''INSERT INTO {} (name, ident) VALUES (?, ?)'''.format(self.table), (attr_of_item_node.get('Name'), attr_of_item_node.get('Ident')))
+                cur.execute('''INSERT INTO {} (name, ident) VALUES (?, ?)'''.format(self.table),
+                            (attr_of_item_node.get('Name'), attr_of_item_node.get('Ident')))
                 logger.debug('Transaction of "%s" item is completed.' % (attr_of_item_node.get('Name')))
         db.commit()
         cur.close()
@@ -131,30 +140,31 @@ class Request:
         ip_string = 'https://' + self.i + ":" + self.p + '/rk7api/v0/xmlinterface.xml'
         requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
         response = requests.get(ip_string, data=xml_request_string, auth=(self.user_name, self.pass_word), verify=False)
-        parsed_employees_list = ET.fromstring(response.content)
         db = sqlite3.connect('reference.db')
-        for item in parsed_employees_list.findall("./RK7Reference/RIChildItems/TRK7Restaurant/RIChildItems/TRole"):
-            attr_of_role_node = item.attrib
-            # cur = db.cursor(mycursor)
-            # cur.execute('''INSERT INTO Employees (role, role_ident) VALUES (?, ?)''', (attr_of_role_node.get('Name'), attr_of_role_node.get('ItemIdent')))
-            # logger.debug('Transaction of "%s" role is completed.' % (attr_of_role_node.get('Name')))
-            # cur.close()
-            # Получим childs для выбранной нами ноды
-            if item:
-                employees = item[0].getchildren()
-                for employee in employees:
-                    cur = db.cursor(mycursor)
-                    employee_att = employee.attrib
-                    cur.execute('''INSERT INTO Employees (role, role_ident, name, ident) VALUES (?, ?, ?, ?)''',
-                    (attr_of_role_node.get('Name'), attr_of_role_node.get('ItemIdent'), employee_att.get('Name'),
-                    employee_att.get('Ident')))
-                    logger.debug('Transaction of "%s" is completed.' % (employee_att.get('Name')))
-                    cur.close()
+        # Используем модуль Xpath парсинга и нахождения нужных нам нод
+        tree = etree.XML(response.content)
+        # Запрос будет аналогичным с fromstring
+        parsed_employees_list = tree.xpath(
+            "./RK7Reference/RIChildItems/TRK7Restaurant/RIChildItems/TRole/RIChildItems/TEmployee")
+        for employee in parsed_employees_list:
+            attr_of_employee_name_node = employee.attrib
+            # ancestor - вызов всех предков текущего элемента "employee", у которых есть атрибут "Name"
+            names = employee.xpath('ancestor::*[@Name]')
+            # https://msdn.microsoft.com/ru-ru/library/ms256086(v=vs.120).aspx
+            role = employee.xpath('/RK7Reference/RIChildItems/TRK7Restaurant/RIChildItems/TRole/ancestor::*[@ItemIdent]')
+            print(role)
+            cur = db.cursor(mycursor)
+            cur.execute(
+                '''INSERT INTO Employees (name, ident, restaurant, role) VALUES (?, ?, ?, ?)''',
+                (attr_of_employee_name_node.get('Name'), attr_of_employee_name_node.get('Ident'), names[0].get('Name'),
+                names[1].get('Name')))
+            logger.debug('Transaction of "%s" is completed.' % (attr_of_employee_name_node.get('Name')))
+            cur.close()
 
         xml_employees_code_request_string = '<RK7Query><RK7CMD CMD="GetRefData" RefName = "Employees"/></RK7Query>'
         requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
         response_code = requests.get(ip_string, data=xml_employees_code_request_string,
-                                auth=(self.user_name, self.pass_word), verify=False)
+                                     auth=(self.user_name, self.pass_word), verify=False)
 
         parsed_employees_code_list = ET.fromstring(response_code.content)
         cur_2 = db.cursor(mycursor)
@@ -167,13 +177,14 @@ class Request:
             if attr_of_item_node.get('Status') == 'rsActive' and attr_of_item_node.get('ActiveHierarchy') == 'true':
                 cur = db.cursor(mycursor)
                 cur.execute('''INSERT INTO Employees_2 (code, card_code, ident) VALUES (?, ?, ?)''',
-                (attr_of_item_node.get('Code'), attr_of_item_node.get('CardCode'), attr_of_item_node.get('Ident')))
+                            (attr_of_item_node.get('Code'), attr_of_item_node.get('CardCode'),
+                             attr_of_item_node.get('Ident')))
                 cur.close()
         # Делаем выборку из таблицы Employees_2 для значений совпадающих ident (Employees.ident = Employees_2.ident)
-        cur_2.execute('''UPDATE Employees SET code = (SELECT code FROM Employees_2 WHERE Employees.ident = Employees_2.ident)''')
+        cur_2.execute(
+            '''UPDATE Employees SET code = (SELECT code FROM Employees_2 WHERE Employees.ident = Employees_2.ident)''')
         cur_2.close()
         db.commit()
-
 
     def menu_request(self, i, p, user_name, pass_word):
         self.i = i
@@ -196,7 +207,8 @@ class Request:
         стандартной функции .value и сконвертируем полученные значения в список и затем с помощью [0]
         получим первый эелемент списка'''
 
-        xml_request_string = '<RK7Query><RK7CMD CMD="GetOrderMenu" StationCode="' + a + '" DateTime="' + strftime("%Y-%m-%d %H:%M:%S") + '" /></RK7Query>'
+        xml_request_string = '<RK7Query><RK7CMD CMD="GetOrderMenu" StationCode="' + a + '" DateTime="' + strftime(
+            "%Y-%m-%d %H:%M:%S") + '" /></RK7Query>'
         cur.close()
 
         # Делаю запрос всех элементов меню (нужен для получения меню). В дальнейшем будет использоваться для
@@ -217,14 +229,14 @@ class Request:
             attr_of_item_node = (item.attrib)
             cur = db.cursor(mycursor)
             cur.execute('''INSERT INTO Menu_Order (ident, price) VALUES (?, ?)''',
-                             (attr_of_item_node.get('Ident'), attr_of_item_node.get('Price')))
+                        (attr_of_item_node.get('Ident'), attr_of_item_node.get('Price')))
             logger.debug('Transaction of "%s" ident is completed.' % (attr_of_item_node.get('Ident')))
         db.commit()
         cur.close()
 
         # Делаем запрос полного меню
         response_menu = session.request(method='GET', url=ip_string, data=xml_request_string_full_menu,
-                                   auth=(self.user_name, self.pass_word), verify=False)
+                                        auth=(self.user_name, self.pass_word), verify=False)
         # С помощью The ElementTree XML API делаем парсинг ответа из строки
         parsed_full_menu = ET.fromstring(response_menu.content)
         for item in parsed_full_menu.findall("./RK7Reference/Items/Item"):
@@ -240,7 +252,7 @@ class Request:
         # Делаем запрос списка модификаторов
         xml_request_string_modi = '<RK7Query><RK7CMD CMD="GetRefData" RefName = "MODIFIERS"/></RK7Query>'
         response_modi = session.request(method='GET', url=ip_string, data=xml_request_string_modi,
-                                   auth=(self.user_name, self.pass_word), verify=False)
+                                        auth=(self.user_name, self.pass_word), verify=False)
         parsed_modi = ET.fromstring(response_modi.content)
         for item in parsed_modi.findall("./RK7Reference/Items/Item"):
             attr_of_item_node = (item.attrib)
@@ -254,7 +266,7 @@ class Request:
         # Делаем запрос схем модификаторов
         xml_request_string_modi_schemes = '<RK7Query><RK7CMD CMD="GetRefData" RefName = "MODISCHEMES"/></RK7Query>'
         response_modi_schemes = session.request(method='GET', url=ip_string, data=xml_request_string_modi_schemes,
-                                        auth=(self.user_name, self.pass_word), verify=False)
+                                                auth=(self.user_name, self.pass_word), verify=False)
         parsed_modi_schemes = ET.fromstring(response_modi_schemes.content)
         for item in parsed_modi.findall("./RK7Reference/Items/Item"):
             attr_of_item_node = (item.attrib)
@@ -266,8 +278,10 @@ class Request:
                 logger.debug('Transaction of "%s" item is completed.' % (attr_of_item_node.get('Name')))
 
         cur.execute('''UPDATE Menu_Order SET name = (SELECT name FROM Menu WHERE Menu.ident = Menu_Order.ident)''')
-        cur.execute('''UPDATE Menu_Order SET modi_scheme = (SELECT modi_scheme FROM Menu WHERE Menu.ident = Menu_Order.ident)''')
-        cur.execute('''UPDATE Menu_Order SET combo_scheme = (SELECT combo_scheme FROM Menu WHERE Menu.ident = Menu_Order.ident)''')
+        cur.execute(
+            '''UPDATE Menu_Order SET modi_scheme = (SELECT modi_scheme FROM Menu WHERE Menu.ident = Menu_Order.ident)''')
+        cur.execute(
+            '''UPDATE Menu_Order SET combo_scheme = (SELECT combo_scheme FROM Menu WHERE Menu.ident = Menu_Order.ident)''')
         cur.close()
         db.commit()
         db.close()
@@ -288,7 +302,7 @@ class Request:
             attr_of_orders_node = item.attrib
             cur = db.cursor(mycursor)
             cur.execute('''INSERT INTO Visits (visit_id, finished) VALUES (?, ?)''',
-            (attr_of_orders_node.get('VisitID'), attr_of_orders_node.get('Finished')))
+                        (attr_of_orders_node.get('VisitID'), attr_of_orders_node.get('Finished')))
             logger.debug('Transaction of "%s" visit is completed.' % (attr_of_orders_node.get('VisitID')))
             cur.close()
             # Получим childs для выбранной нами ноды
@@ -297,9 +311,11 @@ class Request:
                 cur = db.cursor(mycursor)
                 order_att = order.attrib
                 cur.execute('''INSERT INTO Orders (visit_id, order_id, order_name, order_guid, table_code, waiter_id,
-                to_pay_sum) VALUES (?, ?, ?, ?, ?, ?, ?)''', (attr_of_orders_node.get('VisitID'),
-                order_att.get('OrderID'), order_att.get('OrderName'), order_att.get('guid'), order_att.get('TableCode'),
-                order_att.get('WaiterID'), order_att.get('ToPaySum')))
+                to_pay_sum, finished) VALUES (?, ?, ?, ?, ?, ?, ?, ?)''', (attr_of_orders_node.get('VisitID'),
+                                                              order_att.get('OrderID'), order_att.get('OrderName'),
+                                                              order_att.get('guid'), order_att.get('TableCode'),
+                                                              order_att.get('WaiterID'), order_att.get('ToPaySum'),
+                                                              order_att.get('Finished')))
                 logger.debug('Transaction of "%s" order is completed.' % (order_att.get('OrderName')))
                 cur.close()
         db.commit()
