@@ -33,7 +33,8 @@ class Request:
         cur.execute('''DROP TABLE IF EXISTS Orders''')
         cur.execute('''DROP TABLE IF EXISTS Visits''')
         cur.execute('''DROP TABLE IF EXISTS Modi_Items''')
-        cur.execute('''DROP TABLE IF EXISTS Modi_Schemes''')
+        cur.execute('''DROP TABLE IF EXISTS Modi_Schemes_Groups''')
+        cur.execute('''DROP TABLE IF EXISTS My_Orders''')
 
         logger.info('DB was cleared.')
 
@@ -61,10 +62,15 @@ class Request:
             to_pay_sum INTEGER, finished INTEGER)''')
         cur.execute(
             '''CREATE TABLE Visits ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, visit_id INTEGER, finished INTEGER)''')
-        cur.execute('''CREATE TABLE Modi_Items ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, ident INTEGER, name TEXT,
-        max_one_dish INTEGER, Weight INTEGER)''')
-        cur.execute('''CREATE TABLE Modi_Schemes ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, ident INTEGER, name TEXT,
-        modi_scheme INTEGER, combo_scheme INTEGER)''')
+        cur.execute(
+            '''CREATE TABLE Modi_Items ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, modi_ident INTEGER, name TEXT,
+        main_parent_ident INTEGER, price INTEGER, max_one_dish INTEGER, weight INTEGER)''')
+        cur.execute('''CREATE TABLE Modi_Schemes_Groups ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+        group_scheme_ident INTEGER, modi_group_name TEXT, modi_scheme_ident INTEGER, modi_group_ident INTEGER,
+        down_limit INTEGER, use_down_limit INTEGER)''')
+        cur.execute(
+            '''CREATE TABLE My_Orders ('key' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, order_name TEXT,
+        dish_number INTEGER, dish_id INTEGER, dish_qty INTEGER, modi_id INTEGER, modi_qty_int INTEGER)''')
 
         db.close()
 
@@ -258,24 +264,31 @@ class Request:
             attr_of_item_node = (item.attrib)
             if attr_of_item_node.get('Status') == 'rsActive' and attr_of_item_node.get('ActiveHierarchy') == 'true':
                 cur = db.cursor(mycursor)
-                cur.execute('''INSERT INTO Modi_Items (name, ident, max_one_dish, weight) VALUES (?, ?, ?, ?)''',
-                            (attr_of_item_node.get('Name'), attr_of_item_node.get('Ident'),
-                             attr_of_item_node.get('MaxOneDish'), attr_of_item_node.get('Weight')))
+                cur.execute('''INSERT INTO Modi_Items (name, modi_ident, main_parent_ident, max_one_dish, weight)
+                VALUES (?, ?, ?, ?, ?)''', (attr_of_item_node.get('Name'), attr_of_item_node.get('Ident'),
+                                            attr_of_item_node.get('MainParentIdent'),
+                                            attr_of_item_node.get('MaxOneDish'), attr_of_item_node.get('Weight')))
                 logger.debug('Transaction of "%s" item is completed.' % (attr_of_item_node.get('Name')))
 
         # Делаем запрос схем модификаторов
-        xml_request_string_modi_schemes = '<RK7Query><RK7CMD CMD="GetRefData" RefName = "MODISCHEMES"/></RK7Query>'
+        xml_request_string_modi_schemes = ('<RK7Query><RK7CMD CMD="GetRefData" RefName="modischemedetails"'
+                                           ' IgnoreEnums="1" WithChildItems="1" WithMacroProp="1" OnlyActive="1"'
+                                           ' PropMask="Items.(Ident, GUIDString, ReadOnlyName, ModiScheme, ModiGroup,'
+                                           ' UpLimit, DownLimit, SortNum, DefaultModifier, SHQuantity, FreeCount,'
+                                           ' ReplaceDefModifier, ChangesPrice, UseUpLimit, UseDownLimit)"/></RK7Query>')
+
         response_modi_schemes = session.request(method='GET', url=ip_string, data=xml_request_string_modi_schemes,
                                                 auth=(self.user_name, self.pass_word), verify=False)
         parsed_modi_schemes = ET.fromstring(response_modi_schemes.content)
-        for item in parsed_modi.findall("./RK7Reference/Items/Item"):
+        for item in parsed_modi_schemes.findall("./RK7Reference/Items/Item"):
             attr_of_item_node = (item.attrib)
-            if attr_of_item_node.get('Status') == 'rsActive' and attr_of_item_node.get('ActiveHierarchy') == 'true':
-                cur = db.cursor(mycursor)
-                cur.execute('''INSERT INTO Modi_Items (name, ident, max_one_dish, weight) VALUES (?, ?, ?, ?)''',
-                            (attr_of_item_node.get('Name'), attr_of_item_node.get('Ident'),
-                             attr_of_item_node.get('MaxOneDish'), attr_of_item_node.get('Weight')))
-                logger.debug('Transaction of "%s" item is completed.' % (attr_of_item_node.get('Name')))
+            cur = db.cursor(mycursor)
+            cur.execute('''INSERT INTO Modi_Schemes_Groups (group_scheme_ident, modi_group_name, modi_scheme_ident,
+            modi_group_ident, down_limit, use_down_limit) VALUES (?, ?, ?, ?, ?, ?)''',
+                        (attr_of_item_node.get('Ident'), attr_of_item_node.get('ReadOnlyName'),
+                         attr_of_item_node.get('ModiScheme'), attr_of_item_node.get('ModiGroup'),
+                         attr_of_item_node.get('DownLimit'),attr_of_item_node.get('UseDownLimit')))
+            logger.debug('Transaction of "%s" item is completed.' % (attr_of_item_node.get('ReadOnlyName')))
 
         cur.execute('''UPDATE Menu_Order SET name = (SELECT name FROM Menu WHERE Menu.ident = Menu_Order.ident)''')
         cur.execute(

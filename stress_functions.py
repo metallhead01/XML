@@ -156,19 +156,48 @@ class Stress_functions:
                         code_qty_dict = {}
                         # Пока количество итераций меньше или равно случайного числа "a", выполнять код.
                         while times <= a:
-                            cur_1 = db.cursor()
+                            cur_1 = db.cursor(mycursor)
                             # Взяли раздомное значение из базы
                             cur_1.execute('SELECT ident FROM Menu_Order ORDER BY RANDOM() LIMIT 1')
                             dish_id = cur_1.fetchone()[0]
-                            # Добавили в словарь, quantity (умноженное на 1000, т.к. изначально передается в
-                            # дробной форме)
-                            code_qty_dict[str(dish_id)] = (randint(1, 10) * 1000)
+                            cur_1.execute('''SELECT modi_scheme FROM Menu_Order WHERE ident=(?)''', (dish_id,))
+                            modi_scheme = cur_1.fetchone()[0]
+                            dish_qty_int = randint(1, 10) * 1000
+                            if modi_scheme != 0:
+                                # Запросили modi_group_ident
+                                cur_1.execute(
+                                    '''SELECT modi_group_ident,down_limit,use_down_limit FROM Modi_Schemes_Groups WHERE modi_scheme_ident=(?)''',
+                                    (modi_scheme,))
+                                # Получили кортеж со значениями modi_group_ident (0), down_limit(1) и use_down_limit(2)
+                                modi_group_ident = cur_1.fetchone()
+                                # Проверяем, что down_limit больше одного и use_down_limit не равно 0, т.е. моди обязателен к использовани
+                                if modi_group_ident[1] > 0 and modi_group_ident[2] != 0:
+                                    # Запросом к Modi_Items нашли моди ID по найденной ранее группе
+                                    cur_1.execute('''SELECT modi_ident FROM Modi_Items WHERE main_parent_ident=(?)''',
+                                                  (modi_group_ident[0],))
+                                    modi_ident = cur_1.fetchone()
+                                    cur_1.execute(
+                                        '''INSERT INTO My_Orders (dish_id, dish_qty, modi_id, modi_qty_int) VALUES (?, ?, ?, ?)''',
+                                        (dish_id, dish_qty_int, modi_ident[0], modi_group_ident[1]))
+                                    db.commit()
+                            else:
+                                cur_1.execute('''INSERT INTO My_Orders (dish_id, dish_qty) VALUES (?, ?)''',
+                                              (dish_id, dish_qty_int))
+                                db.commit()
                             times += 1
                         l_ist = []
-                        # Собираем строку для XML-запроса. Для этого значения из словаря вставляем в шаблон и
-                        # добавляем в список
-                        for key, value in code_qty_dict.items():
-                            l_ist.append('<Dish id= "' + str(key) + '" quantity= "' + str(value) + '"></Dish>')
+                        # Собираем строку для XML-запроса. Для этого значения из словаря вставляем в шаблон и обавляем в список.
+                        cur_1.execute(
+                            '''SELECT dish_id,dish_qty,modi_id,modi_qty_int FROM My_Orders WHERE modi_id NOTNULL AND order_name ISNULL''')
+                        dishes_with_modi = cur_1.fetchall()
+                        for key in dishes_with_modi:
+                            l_ist.append('<Dish id= "' + str(key[0]) + '" quantity= "' + str(key[1]) + '">'
+                                         '<Modi id="' + str(key[2]) + '" count="' + str(key[3]) + '" price="0"/></Dish>')
+                        cur_1.execute(
+                            '''SELECT dish_id,dish_qty FROM My_Orders WHERE modi_id ISNULL AND order_name ISNULL''')
+                        dishes_without_modi = cur_1.fetchall()
+                        for key in dishes_without_modi:
+                            l_ist.append('<Dish id= "' + str(key[0]) + '" quantity= "' + str(key[1]) + '"/></Dish>')
                         # Объединяем список в строку при помощи разделителя
                         sep = ''
                         sep.join(l_ist)
@@ -194,8 +223,9 @@ class Stress_functions:
                             if parsed_guid_nodes.get('Status') != "Ok":
                                 raise NameError(parsed_guid_nodes.get('ErrorText'))
                             parsed_guid = parsed_guid_nodes[0].attrib
-                            waiter = parsed_guid_nodes[0][1].attrib
 
+                            waiter = parsed_guid_nodes[0][1].attrib
+                            cur_1.execute('UPDATE My_Orders SET order_name =(?)', (parsed_guid.get('OrderName')))
                             # время ожидания перед оплатой
                             time.sleep(int(self.pay_time))
 
@@ -230,5 +260,5 @@ class Stress_functions:
                                 log.info_log_writing('Orders tried to create "%s", Ok is "%s".' % (times - 1, count))
                                 db.close()
                         except NameError as m:
-                            messagebox.showerror(title='Order pay error', message=m)
+                            messagebox.showerror(title='Order save error', message=m)
                             error_log.warning_log_writing(m)
